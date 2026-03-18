@@ -14,25 +14,6 @@
   <div id="particles-container"></div>
   <div class="site-frame"></div>
 
-  <!-- Language Switcher -->
-  <div class="lang-switcher">
-    <i class="fas fa-globe"></i>
-    <select id="lang-select" onchange="translatePage(this.value)">
-      <option value="ar">العربية</option>
-      <option value="en">English</option>
-      <option value="fr">Français</option>
-      <option value="es">Español</option>
-      <option value="de">Deutsch</option>
-      <option value="tr">Türkçe</option>
-      <option value="ur">اردو</option>
-      <option value="hi">हिन्दी</option>
-      <option value="zh">中文</option>
-      <option value="ja">日本語</option>
-      <option value="ko">한국어</option>
-      <option value="ru">Русский</option>
-    </select>
-  </div>
-
   <!-- Decorative Stars Strip (Admin hidden among them) -->
   <div class="stars-strip">
     <i class="fas fa-star decor-star"></i>
@@ -47,8 +28,27 @@
   </div>
 
   <header>
-    <a href="index.html" class="logo">بصمة ديزاين</a>
-    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+    <a href="index.html" class="logo" style="font-size: 1.5rem;">بصمة ديزاين</a>
+    
+    <!-- Language Switcher - Homepage Only -->
+    <div class="lang-switcher-header">
+      <i class="fas fa-globe"></i>
+      <select id="lang-select" onchange="translatePage(this.value)">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="es">Español</option>
+        <option value="de">Deutsch</option>
+        <option value="tr">Türkçe</option>
+        <option value="ur">اردو</option>
+        <option value="hi">हिन्दी</option>
+        <option value="zh">中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+        <option value="ru">Русский</option>
+      </select>
+    </div>
+
     <nav>
       <ul>
         <li><a href="index.html">الرئيسية</a></li>
@@ -64,8 +64,12 @@
   <main class="index-main">
     <!-- Premium Hero Section -->
     <section class="hero glass-panel index-hero reveal">
-      <div class="hero-content">
-        <h1 class="fade-in-up">مرحباً بكم في <span class="brand golden-glow">بصمة ديزاين</span></h1>
+      <div class="hero-content" style="display: flex; flex-direction: column; align-items: center; text-align: center;">
+        <!-- New Profile Picture -->
+        <div class="profile-pic-container fade-in-up">
+          <img src="WhatsApp Image 2026-03-17 at 10.10.10 AM (1).jpeg" alt="بصمة ديزاين" class="profile-img" id="main-profile-pic" onerror="this.onerror=null; this.src='https://via.placeholder.com/180/1a0b12/ff8a8a?text=صورة+البروفايل';">
+        </div>
+        <h1 class="fade-in-up delay-1" style="margin-top: 1rem;">مرحباً بكم في <span class="brand golden-glow">بصمة ديزاين</span></h1>
         <p class="fade-in-up delay-1">
           عالم من التصاميم الرومانسية والشيك، نعبر عن مشاعرك بأرقى الطرق. 
           <br>

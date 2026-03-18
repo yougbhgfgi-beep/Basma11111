@@ -182,29 +182,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Profanity Filter
   const badWords = ['شتم1', 'شتم2', 'قبيح', 'كلمة_سيئة', 'badword1', 'badword2', 'idiot', 'stupid'];
-  const filterText = (text) => {
-    let filtered = text;
-    badWords.forEach(word => {
-      const reg = new RegExp(word, 'gi');
-      filtered = filtered.replace(reg, '***');
-    });
-    return filtered;
+  const containsBadWords = (text) => {
+    if (!text) return false;
+    const lowerText = String(text).toLowerCase();
+    return badWords.some(word => lowerText.includes(word.toLowerCase()));
   };
 
   // Music Player State — hidden, auto-play, loops
   let bgMusic = new Audio('bg-music.mp4');
   bgMusic.loop = true;
-  bgMusic.volume = 0.3;
+  bgMusic.volume = 0.4;
+  bgMusic.preload = 'auto';
 
   // Sync music time across pages
   const savedTime = sessionStorage.getItem('music_time');
   if (savedTime) bgMusic.currentTime = parseFloat(savedTime);
 
-  // Periodic save of music time
+  // Periodic save of music time and state
   setInterval(() => {
     if (!bgMusic.paused) {
       sessionStorage.setItem('music_time', bgMusic.currentTime);
+      sessionStorage.setItem('music_playing', 'true');
+    } else {
+      sessionStorage.setItem('music_playing', 'false');
     }
+    updateMusicToggleIcon();
   }, 1000);
 
   // Resume music if it was playing before navigation
@@ -218,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     bgMusic.play().then(() => {
       sessionStorage.setItem('music_playing', 'true');
+      updateMusicToggleIcon();
     }).catch(() => {});
     
     // Remote listeners once played
@@ -226,14 +229,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   };
 
-  if (isMusicEnabled) {
-    ['click', 'touchstart', 'scroll', 'keydown', 'mousemove', 'wheel', 'mousedown'].forEach(evt => {
-      document.addEventListener(evt, handleFirstInteraction, { once: true });
-    });
-  } else {
-    // If never started, wait for first click specifically
-    document.addEventListener('click', handleFirstInteraction, { once: true });
-    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+  // Always listen for the first interaction to bridge the browser's autoplay block
+  ['click', 'touchstart', 'scroll', 'keydown', 'mousemove', 'wheel', 'mousedown'].forEach(evt => {
+    document.addEventListener(evt, handleFirstInteraction, { once: true });
+  });
+
+  // Create Global Music Toggle
+  const musicToggle = document.createElement('div');
+  musicToggle.className = 'music-toggle';
+  musicToggle.innerHTML = '<i class="fas fa-volume-up"></i>';
+  musicToggle.title = "تشغيل/إيقاف الموسيقى";
+  document.body.appendChild(musicToggle);
+
+  musicToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (bgMusic.paused) {
+      bgMusic.play();
+      sessionStorage.setItem('music_playing', 'true');
+    } else {
+      bgMusic.pause();
+      sessionStorage.setItem('music_playing', 'false');
+    }
+    updateMusicToggleIcon();
+  });
+
+  function updateMusicToggleIcon() {
+    const icon = musicToggle.querySelector('i');
+    if (!icon) return;
+    if (bgMusic.paused) {
+      icon.className = 'fas fa-volume-mute';
+      musicToggle.style.opacity = '0.5';
+    } else {
+      icon.className = 'fas fa-volume-up';
+      musicToggle.style.opacity = '1';
+    }
   }
 
   const checkFirebaseReady = setInterval(() => {
@@ -283,21 +312,56 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPageData('about');
     loadPageData('conclusion');
 
-    // 3. Load Section Images
+    // 3. Load Section Images with Local Fallback
     const loadSectionImages = (section, containerId) => {
       const container = document.getElementById(containerId);
       if (!container) return;
-      onSnapshot(collection(db, `section_images_${section}`), (snap) => {
+
+      const renderImages = (images) => {
         container.innerHTML = '';
-        snap.forEach(pDoc => {
-          const data = pDoc.data();
+        images.forEach(data => {
           const item = document.createElement('div');
-          item.className = 'gallery-item reveal active';
-          item.innerHTML = `
-            <img src="${data.url}" class="thumbnail-img" style="width:100%; height:100%; object-fit:cover;">
-          `;
+          
+          if (section === 'certificates') {
+            item.className = 'cert-img-full reveal active';
+            item.innerHTML = `
+              <img src="${data.url}" class="thumbnail-img" style="width:100%; height:auto; object-fit:contain; border-radius:12px; margin-bottom:1.5rem;">
+            `;
+          } else {
+            item.className = 'gallery-item reveal active';
+            item.innerHTML = `
+              <img src="${data.url}" class="thumbnail-img" style="width:100%; height:100%; object-fit:cover;">
+              <div class="gallery-caption">${data.caption || 'بصمة ديزاين'}</div>
+            `;
+            
+            item.addEventListener('click', () => {
+               const lightbox = document.querySelector('.lightbox-modal');
+               if (lightbox) {
+                 const lightboxImg = lightbox.querySelector('.lightbox-content');
+                 if (lightboxImg) {
+                   lightboxImg.src = data.url;
+                   lightbox.style.display = 'flex';
+                 }
+               }
+            });
+          }
           container.appendChild(item);
         });
+      };
+      // 2. Listen to Firebase and overwrite if custom images exist
+      onSnapshot(collection(db, `section_images_${section}`), (snap) => {
+        if (!snap.empty) {
+          const fbImages = snap.docs.map(d => ({ url: d.data().url, caption: d.data().caption }));
+          renderImages(fbImages);
+        } else {
+          // If Firebase is completely empty, it shouldn't overwrite the local fallbacks.
+          const localImgs = document.querySelectorAll('.gallery-thumbnails img');
+          if (localImgs.length === 0) {
+            container.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary); width: 100%;">لم يتم رفع صور في هذا القسم بعد.</p>`;
+          }
+        }
+      }, (err) => {
+        console.warn("Firebase Image Load Error:", err);
       });
     };
 
@@ -306,46 +370,106 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSectionImages('certificates', 'certificates-grid');
   }
 
+  // --- IMMEDIATE OFFLINE FALLBACK LOGIC ---
+  // Run this entirely outside of Firebase initialization.
+  // It guarantees that if Firebase fails to load, the images still appear instantly.
+  const executeLocalFallbacks = () => {
+    ['credibility', 'joy', 'certificates'].forEach(section => {
+      const container = document.getElementById(`${section}-grid`);
+      if (container) {
+        const localImgs = document.querySelectorAll('.gallery-thumbnails img');
+        if (localImgs.length > 0) {
+          container.innerHTML = '';
+          Array.from(localImgs).forEach(img => {
+             const data = { url: img.getAttribute('src'), caption: img.alt || 'بصمة ديزاين' };
+             const item = document.createElement('div');
+             
+             if (section === 'certificates') {
+               item.className = 'cert-img-full reveal active';
+               item.innerHTML = `
+                 <img src="${data.url}" class="thumbnail-img" style="width:100%; height:auto; object-fit:contain; border-radius:12px; margin-bottom:1.5rem;">
+               `;
+             } else {
+               item.className = 'gallery-item reveal active';
+               item.innerHTML = `
+                 <img src="${data.url}" class="thumbnail-img" style="width:100%; height:100%; object-fit:cover;">
+                 <div class="gallery-caption">${data.caption}</div>
+               `;
+               
+               item.addEventListener('click', () => {
+                  const lightbox = document.querySelector('.lightbox-modal');
+                  if (lightbox) {
+                    const lightboxImg = lightbox.querySelector('.lightbox-content');
+                    if (lightboxImg) {
+                      lightboxImg.src = data.url;
+                      lightbox.style.display = 'flex';
+                    }
+                  }
+               });
+             }
+             container.appendChild(item);
+          });
+        }
+      }
+    });
+  };
+  executeLocalFallbacks();
+
   function initComments() {
     const { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } = window.fsUtils;
     const db = window.firebaseDB;
     const commentsCol = collection(db, 'comments');
 
-    const q = query(commentsCol, orderBy('timestamp', 'desc'));
-    onSnapshot(q, (snapshot) => {
+    // Use a simple collection listener for maximum reliability
+    onSnapshot(commentsCol, (snapshot) => {
+      if (!commentsDisplay) return;
       commentsDisplay.innerHTML = '';
+      
       if (snapshot.empty) {
         commentsDisplay.innerHTML = '<div class="comment-card glass-panel" style="text-align:center; padding: 3rem;"><i class="fas fa-comment-dots" style="font-size: 2rem; color: var(--accent-gold); margin-bottom: 1rem; display: block;"></i>لا توجد تعليقات بعد.. كن أول من يترك بصمته هنا!</div>';
         return;
       }
-      snapshot.forEach((doc) => {
+
+      // Sort locally to ensure comments without timestamps (latency compensation) still show up
+      const sortedDocs = snapshot.docs.sort((a, b) => {
+        const timeA = a.data().timestamp?.seconds || Date.now();
+        const timeB = b.data().timestamp?.seconds || Date.now();
+        return timeB - timeA;
+      });
+
+      sortedDocs.forEach((doc) => {
         const data = doc.data();
         const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString('ar-EG') : 'الآن';
-        const starCount = data.stars || 5;
-        const starsHtml = '<span class="star-filled">★</span>'.repeat(starCount) + '<span class="star-empty">☆</span>'.repeat(5 - starCount);
+        const starCount = parseInt(data.stars || 5);
+        const starsHtml = '<span class="star-filled">★</span>'.repeat(Math.max(0, Math.min(5, starCount))) + '<span class="star-empty">☆</span>'.repeat(Math.max(0, 5 - starCount));
+        
         const card = document.createElement('div');
-        card.className = 'comment-card glass-panel';
+        card.className = 'comment-card glass-panel reveal active';
         
         let adminReplyHtml = '';
         if (data.admin_reply) {
           adminReplyHtml = `
-            <div class="admin-reply-card">
-              <span class="admin-tag">رد بصمة ديزاين</span>
-              <p class="comment-text" style="font-size: 0.95rem;">${data.admin_reply}</p>
+            <div class="admin-reply-card" style="margin-top: 1rem; background: rgba(212, 175, 55, 0.05); padding: 1.2rem; border-radius: 12px; border-right: 3px solid var(--accent-gold);">
+              <span class="admin-tag" style="color: var(--accent-gold); font-weight: bold; font-size: 0.85rem; display: block; margin-bottom: 5px;">رد بصمة ديزاين <i class="fas fa-check-circle"></i></span>
+              <p class="comment-text" style="font-size: 0.95rem; margin: 0;">${data.admin_reply}</p>
             </div>
           `;
         }
 
         card.innerHTML = `
-          <div class="comment-header">
-            <div class="comment-avatar"><i class="fas fa-user-circle"></i></div>
-            <div class="comment-info">
-              <span class="comment-author">${data.name}</span>
-              <div class="comment-stars">${starsHtml}</div>
+          <div class="comment-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="comment-avatar" style="width: 45px; height: 45px; background: rgba(212, 175, 55, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(212, 175, 55, 0.3);">
+                <i class="fas fa-user-circle" style="font-size: 1.8rem; color: var(--accent-gold);"></i>
+              </div>
+              <div class="comment-info" style="text-align: right;">
+                <span class="comment-author" style="display: block; font-weight: 700; color: var(--accent-gold); font-size: 1.1rem;">${data.name || 'مجهول'}</span>
+                <div class="comment-stars" style="color: #FFD700; font-size: 0.9rem;">${starsHtml}</div>
+              </div>
             </div>
-            <span class="comment-date">${date}</span>
+            <span class="comment-date" style="font-size: 0.85rem; color: rgba(230, 200, 206, 0.5);">${date}</span>
           </div>
-          <p class="comment-text">${data.comment}</p>
+          <p class="comment-text" style="line-height: 1.6; color: var(--text-primary); margin-bottom: 0.5rem;">${data.comment || ''}</p>
           ${adminReplyHtml}
         `;
         commentsDisplay.appendChild(card);
@@ -358,10 +482,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const commentRaw = document.getElementById('reviewer-comment').value.trim();
       if (!name) { alert('يرجى كتابة اسمك أولاً! ✍️'); return; }
       if (!commentRaw) { alert('اكتب لنا تعليقك! 💬'); return; }
+      
+      if (containsBadWords(name) || containsBadWords(commentRaw)) {
+        alert('عفواً، لا يمكن إرسال التعليق لاحتوائه على رسالة غير لائقة. 🚫');
+        return;
+      }
+
       const stars = parseInt(document.querySelector('input[name="stars"]:checked')?.value || 5);
-      const comment = filterText(commentRaw);
       try {
-        await addDoc(commentsCol, { name: filterText(name), comment, stars, timestamp: serverTimestamp() });
+        await addDoc(commentsCol, { name: name, comment: commentRaw, stars, timestamp: serverTimestamp() });
         reviewForm.reset();
         alert('شكراً لك! تم إرسال تعليقك بنجاح ❤️');
       } catch (error) {
@@ -424,4 +553,65 @@ document.addEventListener('DOMContentLoaded', () => {
     const db = window.firebaseDB;
     await setDoc(doc(db, 'site_content', key), { content: value });
   }
+
+  // --- SUPPORT WIDGET (Global - Restricted to Conclusion Page) ---
+  if (window.location.pathname.includes('conclusion.html')) {
+    const supportToggle = document.createElement('div');
+    supportToggle.className = 'support-toggle';
+    supportToggle.innerHTML = '<i class="fas fa-headset"></i>';
+    supportToggle.title = "الدعم الفني / تواصل مع الإدارة";
+    document.body.appendChild(supportToggle);
+
+    const supportModal = document.createElement('div');
+    supportModal.className = 'support-modal glass-panel';
+    supportModal.style.display = 'none';
+    supportModal.innerHTML = `
+      <h3 style="color: var(--accent-gold); margin-bottom: 20px; font-family: 'Playfair Display', serif;"><i class="fas fa-envelope-open-text"></i> تواصل مع الإدارة</h3>
+      <input type="text" id="support-name" placeholder="الاسم الكريم..." style="width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 8px; border: 1px solid var(--accent-gold); background: rgba(0,0,0,0.5); color: #fff; font-family: inherit;">
+      <textarea id="support-msg" rows="4" placeholder="اكتب شكواك أو رسالتك... سنستلمها فوراً في غرفة الإدارة." style="width: 100%; margin-bottom: 15px; padding: 12px; border-radius: 8px; border: 1px solid var(--accent-gold); background: rgba(0,0,0,0.5); color: #fff; font-family: inherit;"></textarea>
+      <div style="display: flex; gap: 10px;">
+        <button id="support-send" class="btn premium-btn" style="flex: 1;"><i class="fas fa-paper-plane"></i> إرسال للدعم</button>
+        <button id="support-close" class="btn" style="background: rgba(255, 75, 75, 0.2); border: 1px solid var(--love-red);"><i class="fas fa-times"></i> إغلاق</button>
+      </div>
+    `;
+    document.body.appendChild(supportModal);
+
+    supportToggle.addEventListener('click', () => {
+      supportModal.style.display = supportModal.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    supportModal.querySelector('#support-close').addEventListener('click', () => {
+      supportModal.style.display = 'none';
+    });
+
+    supportModal.querySelector('#support-send').addEventListener('click', async () => {
+      const name = document.getElementById('support-name').value.trim();
+      const msg = document.getElementById('support-msg').value.trim();
+      if (!name || !msg) { alert('يرجى كتابة الاسم والرسالة أولاً! ✍️'); return; }
+      
+      if (typeof containsBadWords === 'function' && (containsBadWords(name) || containsBadWords(msg))) {
+        alert('عفواً، لا يمكن إرسال الرسالة لاحتوائها على كلمات غير لائقة. 🚫');
+        return;
+      }
+
+      if (window.fsUtils) {
+        const { collection, addDoc, serverTimestamp } = window.fsUtils;
+        try {
+          await addDoc(collection(window.firebaseDB, 'support_messages'), {
+            name, message: msg, timestamp: serverTimestamp()
+          });
+          alert('تم رفع رسالتك للإدارة بنجاح! سيتم فحصها في غرفة المدير قريباً. 🛡️');
+          supportModal.style.display = 'none';
+          document.getElementById('support-name').value = '';
+          document.getElementById('support-msg').value = '';
+        } catch (e) {
+          console.error(e);
+          alert('حدث خطأ أثناء الإرسال. تأكد من اتصالك بالإنترنت.');
+        }
+      } else {
+         alert('جاري الاتصال بالخوادم... يرجى المحاولة بعد ثوانٍ قليلة.');
+      }
+    });
+  }
+
 });

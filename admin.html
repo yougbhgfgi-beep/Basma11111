@@ -227,6 +227,16 @@
       </div>
 
       <div class="dashboard-grid">
+        <!-- Support Messages Management -->
+        <section class="glass-panel" style="border-color: var(--love-red);">
+          <div class="section-title">
+            <h2 style="color: var(--love-red);"><i class="fas fa-headset"></i> رسائل الدعم الفني</h2>
+          </div>
+          <div id="admin-support-list" style="max-height: 400px; overflow-y: auto;">
+            <p style="text-align: center;">جاري التحميل...</p>
+          </div>
+        </section>
+
         <!-- Comments Management -->
         <section class="glass-panel">
           <div class="section-title">
@@ -431,14 +441,58 @@
       const { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc, getDoc } = window.fsAdmin;
       const db = window.db;
 
+      // 0. Manage Support Messages
+      const supportCol = collection(db, 'support_messages');
+      onSnapshot(supportCol, (snapshot) => {
+        const supList = document.getElementById('admin-support-list');
+        supList.innerHTML = '';
+        if (snapshot.empty) supList.innerHTML = '<p style="text-align: center;">لا توجد رسائل دعم جديدة ✨</p>';
+        
+        const sortedSup = snapshot.docs.sort((a, b) => {
+          const timeA = a.data().timestamp?.seconds || Date.now();
+          const timeB = b.data().timestamp?.seconds || Date.now();
+          return timeB - timeA;
+        });
+
+        sortedSup.forEach((docSnap) => {
+          const data = docSnap.data();
+          const card = document.createElement('div');
+          card.className = 'manage-card';
+          card.style.flexDirection = 'column';
+          card.style.alignItems = 'flex-start';
+          card.style.background = 'rgba(255, 75, 75, 0.05)';
+          card.innerHTML = `
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <strong style="color: var(--love-red);"><i class="fas fa-user"></i> ${data.name}</strong>
+                <p style="margin-top: 5px; font-size: 1.1rem;">${data.message}</p>
+              </div>
+              <i class="fas fa-check-circle delete-btn" style="color: var(--accent-gold);" onclick="resolveSupport('${docSnap.id}')" title="تحديد كمقروء"></i>
+            </div>
+          `;
+          supList.appendChild(card);
+        });
+      });
+
+      window.resolveSupport = async (id) => {
+        if (confirm('تحديد الرسالة كمقروءة وإخفائها؟')) await deleteDoc(doc(db, 'support_messages', id));
+      };
+
       // 1. Manage Comments
       const commentsCol = collection(db, 'comments');
-      const qComments = query(commentsCol, orderBy('timestamp', 'desc'));
-      onSnapshot(qComments, (snapshot) => {
+      onSnapshot(commentsCol, (snapshot) => {
         const list = document.getElementById('admin-comments-list');
         document.getElementById('count-comments').innerText = snapshot.size;
         list.innerHTML = '';
-        snapshot.forEach((commentDoc) => {
+        
+        // Sort locally for reliability
+        const sortedDocs = snapshot.docs.sort((a, b) => {
+          const timeA = a.data().timestamp?.seconds || Date.now();
+          const timeB = b.data().timestamp?.seconds || Date.now();
+          return timeB - timeA;
+        });
+
+        sortedDocs.forEach((commentDoc) => {
           const data = commentDoc.data();
           const card = document.createElement('div');
           card.className = 'manage-card';
