@@ -415,6 +415,41 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   executeLocalFallbacks();
 
+  // --- DYNAMIC CONTENT FROM ADMIN FIREBASE ---
+  function initSectionData() {
+    if (!window.fsUtils || !window.firebaseDB) {
+      setTimeout(initSectionData, 500);
+      return;
+    }
+    const { doc, onSnapshot } = window.fsUtils;
+    const db = window.firebaseDB;
+
+    // About Section
+    if (document.getElementById('display-phone')) {
+      onSnapshot(doc(db, 'sections', 'about'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.phone) document.getElementById('display-phone').innerText = data.phone;
+          if (data.hours) document.getElementById('display-hours').innerHTML = `من <strong>${data.hours.split(' حتى ')[0] || data.hours}</strong><br>إلى <strong>${data.hours.split(' حتى ')[1] || ''}</strong>`;
+          if (data.duration) document.getElementById('display-duration').innerHTML = `مدة تجهيز المشروع<br><strong>${data.duration}</strong>`;
+          if (data.deposit) document.getElementById('display-deposit').innerHTML = data.deposit;
+        }
+      });
+    }
+
+    // Conclusion Section
+    if (document.getElementById('display-conclusion-main')) {
+      onSnapshot(doc(db, 'sections', 'conclusion'), (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.main) document.getElementById('display-conclusion-main').innerText = data.main;
+          if (data.final) document.getElementById('display-conclusion-final').innerText = data.final;
+        }
+      });
+    }
+  }
+  initSectionData();
+
   function initComments() {
     const { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } = window.fsUtils;
     const db = window.firebaseDB;

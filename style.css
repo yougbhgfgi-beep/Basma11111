@@ -1495,6 +1495,44 @@ footer p {
 .mockup-lines span:nth-child(2) { width: 60%; }
 .mockup-lines span:nth-child(3) { width: 40%; }
 
+/* =========================================
+   Lightbox Gallery Viewer
+========================================= */
+.lightbox-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.95);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 3rem;
+  color: #fff;
+  cursor: pointer;
+  z-index: 10001;
+  transition: all 0.3s;
+  background: rgba(40,15,25,0.8);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 45px;
+  border: 1px solid var(--accent-gold);
+}
+
+.lightbox-close:hover {
+  color: #ff4b4b;
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(255, 75, 75, 0.4);
+}
+
 /* Floating Elements */
 .floating-element {
   position: absolute;
@@ -1597,18 +1635,38 @@ footer p {
   
   /* Grids - 2 columns for mobile side-by-side */
   .gallery-grid, .about-features-grid, .gallery-thumbnails {
+    display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     gap: 10px;
+    align-items: stretch;
   }
   
-  .feature-card { padding: 1rem 0.6rem; border-radius: 10px; }
+  .feature-card { padding: 1rem 0.6rem; border-radius: 10px; height: 100%; display: flex; flex-direction: column; justify-content: center; }
   .feature-card .icon-wrapper { width: 45px; height: 45px; margin-bottom: 0.8rem; }
   .feature-card i { font-size: 1.3rem; }
   .feature-card h3 { font-size: 0.95rem; }
   .feature-card p { font-size: 0.75rem; line-height: 1.4; }
   
-  .gallery-item i { font-size: 2.5rem; }
-  .gallery-caption { font-size: 0.9rem; padding: 0.8rem; }
+  .gallery-item { 
+    aspect-ratio: 1 / 1 !important; 
+    height: auto !important; 
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover !important;
+  }
+  .gallery-item i { font-size: 2rem; }
+  .gallery-caption { 
+    font-size: 0.75rem; 
+    padding: 0.4rem; 
+    bottom: 0; 
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+  }
   
   .glass-panel { padding: 1.5rem 1rem; border-radius: 12px; }
   .site-frame { border-width: 4px; top: 3px; left: 3px; right: 3px; bottom: 3px; }
@@ -1641,6 +1699,12 @@ footer p {
   .feature-card { padding: 1rem 0.5rem; }
   .feature-card h3 { font-size: 0.95rem; }
   .feature-card p { font-size: 0.8rem; }
+
+  /* Ensure certificates also follow the 2-col rule if they are in a grid */
+  .cert-img-full {
+    grid-column: auto !important;
+    margin-bottom: 10px !important;
+  }
 }
 
 
