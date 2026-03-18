@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بصمة ديزاين | الرئيسية - ترحيب</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- Premium UI Elements -->
+  <div class="custom-cursor"></div>
+  <div id="particles-container"></div>
+  <div class="site-frame"></div>
+
+  <!-- Language Switcher -->
+  <div class="lang-switcher">
+    <i class="fas fa-globe"></i>
+    <select id="lang-select" onchange="translatePage(this.value)">
+      <option value="ar">العربية</option>
+      <option value="en">English</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+      <option value="de">Deutsch</option>
+      <option value="tr">Türkçe</option>
+      <option value="ur">اردو</option>
+      <option value="hi">हिन्दी</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+      <option value="ko">한국어</option>
+      <option value="ru">Русский</option>
+    </select>
+  </div>
+
+  <!-- Decorative Stars Strip (Admin hidden among them) -->
+  <div class="stars-strip">
+    <i class="fas fa-star decor-star"></i>
+    <i class="fas fa-star decor-star"></i>
+    <i class="fas fa-star decor-star admin-hidden" onclick="adminStarClick()"></i>
+    <i class="fas fa-star decor-star"></i>
+    <i class="fas fa-star decor-star"></i>
+  </div>
+
+  <div class="bg-bubbles">
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+  </div>
+
+  <header>
+    <a href="index.html" class="logo">بصمة ديزاين</a>
+    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+    <nav>
+      <ul>
+        <li><a href="index.html">الرئيسية</a></li>
+        <li><a href="about.html">عن بصمة</a></li>
+        <li><a href="credibility.html">المصداقية</a></li>
+        <li><a href="joy.html">البهجة</a></li>
+        <li><a href="certificates.html">الشهادات</a></li>
+        <li><a href="conclusion.html">رسالتنا لك</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="index-main">
+    <!-- Premium Hero Section -->
+    <section class="hero glass-panel index-hero reveal">
+      <div class="hero-content">
+        <h1 class="fade-in-up">مرحباً بكم في <span class="brand golden-glow">بصمة ديزاين</span></h1>
+        <p class="fade-in-up delay-1">
+          عالم من التصاميم الرومانسية والشيك، نعبر عن مشاعرك بأرقى الطرق. 
+          <br>
+          نصنع الفرح ونصمم لك لحظات لا تُنسى في كل مشروع لتكون هديتك استثنائية.
+        </p>
+      </div>
+    </section>
+
+    <!-- Demo Preview Section -->
+    <section class="demo-section glass-panel fade-in-up delay-2 reveal">
+      <div class="demo-container">
+        
+        <!-- Mockup Display / Graphic with Link inside -->
+        <div class="demo-visual">
+          <div class="mockup-frame">
+            <div class="mockup-screen">
+              <i class="fas fa-heart mockup-icon"></i>
+              <h3 class="mockup-title">رسالة يا قلبي</h3>
+              
+              <!-- The Demo Link is now INSIDE the phone -->
+              <div class="mockup-action" style="margin-top: 30px; width: 100%;">
+                <a href="https://yougbhgfgi-beep.github.io/BSMA/" target="_blank" class="btn mockup-btn pulse-glow">
+                  <i class="fas fa-external-link-alt"></i> افتح موقع
+                </a>
+              </div>
+              
+            </div>
+          </div>
+          <div class="floating-element el-1"><i class="fas fa-star"></i></div>
+          <div class="floating-element el-2"><i class="fas fa-music"></i></div>
+          <div class="floating-element el-3"><i class="fas fa-gem"></i></div>
+        </div>
+
+        <!-- Demo Content (Text only) -->
+        <div class="demo-content">
+          <h2 class="golden-glow">جرب الإحساس بنفسك</h2>
+          <p>
+            لا تكتفي بالوصف.. اضغط على زر <strong>"افتح موقع"</strong> الموجود داخل شاشة الهاتف التخيلي لتعيش تجربة حية لأحد تصاميمنا الرومانسية، واكتشف كيف يمكن لكلماتك أن تصل مباشرة إلى القلب.
+          </p>
+          
+          <div class="demo-confidence-box" style="margin-top: 1rem;">
+            <i class="fas fa-gem" style="color: var(--accent-gold); font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+            <p style="font-size: 1.2rem; color: var(--text-primary); font-weight: 600; line-height: 1.6; margin-bottom: 0;">
+              مش هنعرض باقي مشاريعنا.. لأننا نؤمن أن مشروع واحد بس كفاية لإثبات الكفاءة والتميز. 
+              ما ستراه في هذه التجربة هو أقل شىء ممكن أن تقدمه لك <span style="color: var(--accent-gold);">بصمة ديزاين</span>. 
+            </p>
+          </div>
+          
+          <p class="demo-hint" style="margin-top: 1.5rem;"><i class="fas fa-shield-alt"></i> التجربة آمنة تماماً ومصممة خصيصاً لتناسب شتى الهواتف.</p>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2026 بصمة ديزاين. جميع الحقوق محفوظة.</p>
+  </footer>
+
+  <!-- Firebase SDKs & App Logic -->
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    window.firebaseDB = db;
+    window.fsUtils = { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, doc, getDoc, setDoc, updateDoc, increment };
+  </script>
+
+  <script>
+    // Admin Star Password Gate
+    function adminStarClick() {
+      const pass = prompt('⭐ أدخل كلمة السر:');
+      if (pass === '11543211') {
+        window.location.href = 'admin.html';
+      } else if (pass !== null) {
+        // Only show error if they didn't click Cancel
+      }
+    }
+
+    // Language Translation (Google Translate)
+    function translatePage(lang) {
+      if (lang === 'ar') {
+        // Remove translation, reload original
+        const frame = document.querySelector('.goog-te-banner-frame');
+        if (frame) frame.remove();
+        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        location.reload();
+        return;
+      }
+      // Set Google Translate cookie
+      document.cookie = `googtrans=/ar/${lang}; path=/;`;
+      document.cookie = `googtrans=/ar/${lang}; path=/; domain=${location.hostname};`;
+      location.reload();
+    }
+  </script>
+
+  <!-- Google Translate Engine (Hidden) -->
+  <script>
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'ar',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <div id="google_translate_element" style="display:none;"></div>
+  <script src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+</body>
+</html>
+

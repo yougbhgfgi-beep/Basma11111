@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بصمة ديزاين | قسم البهجة</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- Premium UI Elements -->
+  <div class="custom-cursor"></div>
+  <div id="particles-container"></div>
+  <div class="site-frame"></div>
+
+  <div class="bg-bubbles">
+    <div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div><div class="bubble"></div>
+  </div>
+
+  <header>
+    <a href="index.html" class="logo">بصمة ديزاين</a>
+    <button class="menu-toggle"><i class="fas fa-bars"></i></button>
+    <nav>
+      <ul>
+        <li><a href="index.html">الرئيسية</a></li>
+        <li><a href="about.html">عن بصمة</a></li>
+        <li><a href="credibility.html">المصداقية</a></li>
+        <li><a href="joy.html">البهجة</a></li>
+        <li><a href="certificates.html">الشهادات</a></li>
+        <li><a href="conclusion.html">رسالتنا لك</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section id="main-view" class="glass-panel reveal" style="max-width: 1200px;">
+      <h2>قسم البهجة وفرحة العملاء</h2>
+      <p style="text-align: center; margin-bottom: 2rem; color: var(--text-secondary); font-size: 1.2rem;">
+        مساحة مخصصة لعرض أروع اللحظات وردود أفعال عملائنا المليئة بالفرح والسعادة بعد استلام مشاريعهم.
+      </p>
+      
+      <div class="gallery-grid">
+        <div class="gallery-item" data-target="joy-section">
+          <i class="fas fa-face-laugh-beam"></i>
+          <div class="gallery-caption">فرحة العملاء بعد الاستلام</div>
+          <div class="click-hint"><i class="fas fa-hand-pointer pulse-anim"></i> اضغط هنا لفتح القسم</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Hidden Sections -->
+    <section id="joy-section" class="detail-section glass-panel" style="display: none; max-width: 1200px;">
+      <h2>فرحة العملاء بعد الاستلام</h2>
+      <p class="lead-text">لحظة استلام المشروع هي لحظة الحصاد. نحن نشارك عملائنا فرحتهم وحماسهم عند رؤية النتيجة النهائية التي تفوق توقعاتهم.</p>
+      
+      <ul class="detail-list">
+        <li><i class="fas fa-check-circle"></i> <div><strong>سعادة غامرة:</strong> ردود الأفعال الأولى هي الدافع الأكبر لنا لتقديم المزيد من الجودة.</div></li>
+        <li><i class="fas fa-check-circle"></i> <div><strong>نجاح مشترك:</strong> فرحة العميل بنجاح مشروعه هي نجاح لنا، ونحن نفخر بأن نكون جزءًا من هذه اللحظة.</div></li>
+        <li><i class="fas fa-check-circle"></i> <div><strong>لحظات لا تُنسى:</strong> وثقنا هنا بعض رسائل السعادة والبهجة التي تغمرنا بطاقة إيجابية.</div></li>
+      </ul>
+
+      <div class="highlight-box">
+        <i class="fas fa-quote-right style-quote"></i>
+        <p>لا شيء يضاهي شعورنا عندما نقرأ كلمات الشكر المليئة بالفرح من عملائنا بعد استلام أعمالهم، إنها الجائزة الحقيقية لنا.</p>
+      </div>
+      
+      <!-- Dynamic Portfolio Content from Admin -->
+      <div id="joy-grid" class="gallery-grid" style="margin-top: 2rem;"></div>
+
+      <button class="btn back-btn" style="margin-top: 2rem; font-family: 'Cairo', sans-serif;">
+        <i class="fas fa-chevron-left"></i> العودة للقسم الرئيسي
+      </button>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 بصمة ديزاين. جميع الحقوق محفوظة.</p>
+  </footer>
+</body>
+</html>

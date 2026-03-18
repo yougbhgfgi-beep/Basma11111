@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بصمة ديزاين | لوحة التحكم</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .admin-container {
+      max-width: 1000px;
+      margin: 2rem auto;
+      padding: 2rem;
+    }
+    .login-box {
+      max-width: 400px;
+      margin: 10vh auto;
+      text-align: center;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    #admin-content { display: none; }
+    .manage-card {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      padding: 1.5rem;
+      border-radius: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    .delete-btn {
+      color: #ff4b4b;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .delete-btn:hover { transform: scale(1.2); }
+    .stat-bar {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 1rem 2rem;
+      background: rgba(212, 175, 55, 0.1);
+      border-radius: 12px;
+      border: 1px solid var(--accent-gold);
+      min-width: 100px;
+    }
+    .stat-item h3 { font-size: 2rem; }
+
+    /* File Upload Area */
+    .upload-area {
+      border: 2px dashed var(--glass-border);
+      border-radius: 15px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: rgba(212, 175, 55, 0.03);
+      margin-bottom: 1rem;
+    }
+    .upload-area:hover {
+      border-color: var(--accent-gold);
+      background: rgba(212, 175, 55, 0.08);
+    }
+    .upload-area i { font-size: 2.5rem; color: var(--accent-gold); margin-bottom: 0.5rem; }
+    .upload-area p { color: var(--text-secondary); margin-top: 0.5rem; }
+    .upload-area input[type="file"] { display: none; }
+
+    /* Image Preview Grid */
+    .img-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 1rem;
+    }
+    .img-grid-item {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      background: #111;
+    }
+    .img-grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: opacity 0.3s;
+    }
+    .img-grid-item:hover img { opacity: 0.5; }
+    .img-grid-item .img-delete {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #ff4b4b;
+      font-size: 1.5rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      cursor: pointer;
+      background: rgba(0,0,0,0.7);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .img-grid-item:hover .img-delete { opacity: 1; }
+
+    /* Site Overview */
+    .site-nav-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .site-nav-card {
+      background: rgba(212, 175, 55, 0.05);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text-primary);
+      transition: all 0.3s ease;
+    }
+    .site-nav-card:hover {
+      border-color: var(--accent-gold);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(212, 175, 55, 0.15);
+    }
+    .site-nav-card i { font-size: 1.5rem; color: var(--accent-gold); display: block; margin-bottom: 0.5rem; }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 1rem;
+    }
+    .section-title h2 { margin: 0; }
+
+    @media (max-width: 768px) {
+      .img-grid { grid-template-columns: repeat(2, 1fr); }
+      .stat-bar { gap: 0.8rem; }
+      .stat-item { padding: 0.8rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="custom-cursor"></div>
+  <div id="particles-container"></div>
+
+  <header>
+    <a href="index.html" class="logo">بصمة ديزاين</a>
+    <nav>
+      <ul>
+        <li><a href="index.html">العودة للموقع</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="admin-container">
+    <!-- Login Section -->
+    <div id="login-section" class="login-box glass-panel reveal active">
+      <h2><i class="fas fa-lock"></i> دخول المدير</h2>
+      <p style="margin-bottom: 2rem; color: var(--text-secondary);">يرجى إدخال كلمة السر الخاصة بك</p>
+      <div class="form-group">
+        <input type="password" id="admin-pass" placeholder="كلمة السر..." style="text-align: center;">
+      </div>
+      <button class="btn premium-btn" onclick="checkAdminPass()" style="width: 100%; justify-content: center;">دخول</button>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div id="admin-content">
+
+      <!-- Site Overview -->
+      <section class="glass-panel" style="margin-bottom: 2rem;">
+        <div class="section-title">
+          <h2><i class="fas fa-globe"></i> نظرة عامة على الموقع</h2>
+        </div>
+        <div class="site-nav-grid">
+          <a href="index.html" target="_blank" class="site-nav-card">
+            <i class="fas fa-home"></i> الرئيسية
+          </a>
+          <a href="about.html" target="_blank" class="site-nav-card">
+            <i class="fas fa-info-circle"></i> عن بصمة
+          </a>
+          <a href="credibility.html" target="_blank" class="site-nav-card">
+            <i class="fas fa-shield-alt"></i> المصداقية
+          </a>
+          <a href="joy.html" target="_blank" class="site-nav-card">
+            <i class="fas fa-smile-beam"></i> البهجة
+          </a>
+          <a href="certificates.html" target="_blank" class="site-nav-card">
+            <i class="fas fa-certificate"></i> الشهادات
+          </a>
+          <a href="conclusion.html" target="_blank" class="site-nav-card">
+            <i class="fas fa-feather-alt"></i> رسالتنا لك
+          </a>
+        </div>
+      </section>
+
+      <div class="stat-bar">
+        <div class="stat-item">
+          <h3 id="count-comments">0</h3>
+          <p>تعليق</p>
+        </div>
+        <div class="stat-item">
+          <h3 id="count-gallery">0</h3>
+          <p>صورة</p>
+        </div>
+        <div class="stat-item">
+          <h3 id="count-visits">0</h3>
+          <p>زيارة</p>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Comments Management -->
+        <section class="glass-panel">
+          <div class="section-title">
+            <h2><i class="fas fa-comments"></i> إدارة التعليقات</h2>
+          </div>
+          <div id="admin-comments-list" style="max-height: 400px; overflow-y: auto;">
+            <p style="text-align: center;">جاري التحميل...</p>
+          </div>
+        </section>
+
+        <!-- Gallery Management (with File Upload) -->
+        <section class="glass-panel">
+          <div class="section-title">
+            <h2><i class="fas fa-images"></i> إدارة المعرض (الصور)</h2>
+          </div>
+
+          <!-- File Upload from Device -->
+          <div class="upload-area" onclick="document.getElementById('gallery-file-input').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>اضغط هنا لرفع صورة من جهازك</p>
+            <p style="font-size: 0.8rem; opacity: 0.6;">JPG, PNG, WebP — حد أقصى 1MB</p>
+            <input type="file" id="gallery-file-input" accept="image/*" onchange="handleGalleryUpload(this)">
+          </div>
+
+          <!-- Or paste URL -->
+          <div style="text-align: center; color: var(--text-secondary); margin: 0.5rem 0;">— أو الصق رابط —</div>
+          <div class="form-group">
+            <input type="text" id="new-photo-url" placeholder="رابط الصورة (URL)...">
+            <input type="text" id="new-photo-caption" placeholder="وصف الصورة (اختياري)..." style="margin-top: 10px;">
+            <button class="btn premium-btn" onclick="addGalleryPhoto()" style="margin-top: 10px; width: 100%;">إضافة صورة</button>
+          </div>
+
+          <div class="img-grid" id="admin-gallery-list">
+            <!-- Photos will load here -->
+          </div>
+        </section>
+
+        <!-- Music Management -->
+        <section class="glass-panel reveal active">
+          <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+            <h2><i class="fas fa-music"></i> استوديو الموسيقى</h2>
+          </div>
+          <div class="form-group">
+            <label>رابط ملف الصوت (mp3)</label>
+            <input type="text" id="site-music-url" placeholder="https://example.com/audio.mp3">
+            <button class="btn premium-btn" onclick="updateSiteMusic()" style="margin-top: 10px; width: 100%;">حفظ وتغيير الأغنية</button>
+          </div>
+        </section>
+
+        <!-- ===== Section Editors ===== -->
+
+        <!-- About Section Editor -->
+        <section class="glass-panel reveal active">
+          <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+            <h2><i class="fas fa-info-circle"></i> تعديل قسم "عن بصمة"</h2>
+          </div>
+          <div class="form-group">
+            <label>رقم الهاتف</label>
+            <input type="text" id="edit-phone" placeholder="01013450059">
+          </div>
+          <div class="form-group">
+            <label>ساعات العمل</label>
+            <input type="text" id="edit-hours" placeholder="مثال: 12 ظهراً حتى 12 ليلاً">
+          </div>
+          <div class="form-group">
+            <label>مدة المشروع</label>
+            <input type="text" id="edit-duration" placeholder="مثال: 4 ساعات">
+          </div>
+          <div class="form-group">
+            <label>سياسة العربون</label>
+            <input type="text" id="edit-deposit" placeholder="مثال: نصف المبلغ مقدماً">
+          </div>
+          <button class="btn premium-btn" onclick="saveSection('about')" style="width: 100%; margin-top: 10px;">حفظ التعديلات</button>
+        </section>
+
+        <!-- Credibility Section Editor -->
+        <section class="glass-panel">
+          <div class="section-title">
+            <h2><i class="fas fa-shield-alt"></i> قسم "المصداقية" — إدارة الصور</h2>
+          </div>
+          <div class="upload-area" onclick="document.getElementById('cred-file-input').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>ارفع صورة مصداقية من جهازك</p>
+            <p style="font-size: 0.8rem; opacity: 0.6;">JPG, PNG, WebP — حد أقصى 1MB</p>
+            <input type="file" id="cred-file-input" accept="image/*" onchange="handleSectionUpload('credibility', this)">
+          </div>
+          <div style="text-align: center; color: var(--text-secondary); margin: 0.5rem 0;">— أو الصق رابط —</div>
+          <div class="form-group">
+            <input type="text" id="cred-img-url" placeholder="رابط الصورة...">
+            <input type="text" id="cred-img-caption" placeholder="وصف الصورة..." style="margin-top: 10px;">
+            <button class="btn premium-btn" onclick="addSectionImage('credibility')" style="margin-top: 10px; width: 100%;">إضافة صورة</button>
+          </div>
+          <div class="img-grid" id="admin-cred-images"></div>
+        </section>
+
+        <!-- Joy Section Editor -->
+        <section class="glass-panel">
+          <div class="section-title">
+            <h2><i class="fas fa-smile-beam"></i> قسم "البهجة" — إدارة الصور</h2>
+          </div>
+          <div class="upload-area" onclick="document.getElementById('joy-file-input').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>ارفع صورة بهجة من جهازك</p>
+            <p style="font-size: 0.8rem; opacity: 0.6;">JPG, PNG, WebP — حد أقصى 1MB</p>
+            <input type="file" id="joy-file-input" accept="image/*" onchange="handleSectionUpload('joy', this)">
+          </div>
+          <div style="text-align: center; color: var(--text-secondary); margin: 0.5rem 0;">— أو الصق رابط —</div>
+          <div class="form-group">
+            <input type="text" id="joy-img-url" placeholder="رابط الصورة...">
+            <input type="text" id="joy-img-caption" placeholder="وصف الصورة..." style="margin-top: 10px;">
+            <button class="btn premium-btn" onclick="addSectionImage('joy')" style="margin-top: 10px; width: 100%;">إضافة صورة</button>
+          </div>
+          <div class="img-grid" id="admin-joy-images"></div>
+        </section>
+
+        <!-- Certificates Section Editor -->
+        <section class="glass-panel">
+          <div class="section-title">
+            <h2><i class="fas fa-certificate"></i> قسم "الشهادات" — إدارة الصور</h2>
+          </div>
+          <div class="upload-area" onclick="document.getElementById('cert-file-input').click()">
+            <i class="fas fa-cloud-upload-alt"></i>
+            <p>ارفع صورة شهادة من جهازك</p>
+            <p style="font-size: 0.8rem; opacity: 0.6;">JPG, PNG, WebP — حد أقصى 1MB</p>
+            <input type="file" id="cert-file-input" accept="image/*" onchange="handleSectionUpload('certificates', this)">
+          </div>
+          <div style="text-align: center; color: var(--text-secondary); margin: 0.5rem 0;">— أو الصق رابط —</div>
+          <div class="form-group">
+            <input type="text" id="cert-img-url" placeholder="رابط الصورة...">
+            <input type="text" id="cert-img-caption" placeholder="اسم الشهادة..." style="margin-top: 10px;">
+            <button class="btn premium-btn" onclick="addSectionImage('certificates')" style="margin-top: 10px; width: 100%;">إضافة شهادة</button>
+          </div>
+          <div class="img-grid" id="admin-cert-images"></div>
+        </section>
+
+        <!-- Conclusion Section Editor -->
+        <section class="glass-panel reveal active">
+          <div style="margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 1rem;">
+            <h2><i class="fas fa-feather-alt"></i> تعديل قسم "رسالتنا لك"</h2>
+          </div>
+          <div class="form-group">
+            <label>نص الرسالة الرئيسية</label>
+            <textarea id="edit-conclusion-main" rows="4" placeholder="النص الرئيسي لصفحة رسالتنا لك..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>نص الكلمة الأخيرة</label>
+            <textarea id="edit-conclusion-final" rows="3" placeholder="كلمة أخيرة.. لشخص استثنائي"></textarea>
+          </div>
+          <button class="btn premium-btn" onclick="saveSection('conclusion')" style="width: 100%; margin-top: 10px;">حفظ التعديلات</button>
+        </section>
+
+      </div>
+
+      <div style="text-align: center; margin-top: 3rem;">
+        <button class="btn" onclick="logoutAdmin()" style="padding: 0.5rem 2rem;">تسجيل الخروج</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Firebase Integration -->
+  <script type="module">
+    import { db } from './firebase-config.js';
+    import { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    
+    window.db = db;
+    window.fsAdmin = { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc, getDoc };
+  </script>
+
+  <script src="script.js"></script>
+  <script>
+    const ADMIN_PASS = "11543211";
+
+    function checkAdminPass() {
+      const input = document.getElementById('admin-pass').value;
+      if (input === ADMIN_PASS) {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        localStorage.setItem('admin_logged_in', 'true');
+        initAdminDashboard();
+      } else {
+        alert('كلمة السر خطأ يا مدير! ⛔');
+      }
+    }
+
+    if (localStorage.getItem('admin_logged_in') === 'true') {
+        document.getElementById('login-section').style.display = 'none';
+        document.getElementById('admin-content').style.display = 'block';
+        setTimeout(initAdminDashboard, 500);
+    }
+
+    function logoutAdmin() {
+      localStorage.removeItem('admin_logged_in');
+      window.location.reload();
+    }
+
+    function initAdminDashboard() {
+      if (!window.fsAdmin) {
+        setTimeout(initAdminDashboard, 500);
+        return;
+      }
+
+      const { collection, onSnapshot, query, orderBy, deleteDoc, doc, addDoc, setDoc, getDoc } = window.fsAdmin;
+      const db = window.db;
+
+      // 1. Manage Comments
+      const commentsCol = collection(db, 'comments');
+      const qComments = query(commentsCol, orderBy('timestamp', 'desc'));
+      onSnapshot(qComments, (snapshot) => {
+        const list = document.getElementById('admin-comments-list');
+        document.getElementById('count-comments').innerText = snapshot.size;
+        list.innerHTML = '';
+        snapshot.forEach((commentDoc) => {
+          const data = commentDoc.data();
+          const card = document.createElement('div');
+          card.className = 'manage-card';
+          card.style.flexDirection = 'column';
+          card.style.alignItems = 'flex-start';
+          card.innerHTML = `
+            <div style="width:100%; display:flex; justify-content:space-between; align-items:flex-start;">
+              <div><strong>${data.name}</strong><p>${data.comment}</p></div>
+              <i class="fas fa-trash-alt delete-btn" onclick="deleteComment('${commentDoc.id}')"></i>
+            </div>
+            <div class="reply-box" style="width:100%; margin-top:1rem; display:flex; gap:10px;">
+              <input type="text" id="reply-to-${commentDoc.id}" placeholder="رد المدير..." style="flex:1; padding:5px; background:rgba(255,255,255,0.1); border:1px solid var(--glass-border); color:white;" value="${data.admin_reply || ''}">
+              <button class="btn premium-btn" style="padding:5px 15px; font-size:0.8rem;" onclick="adminReply('${commentDoc.id}')">رد</button>
+            </div>
+          `;
+          list.appendChild(card);
+        });
+      });
+
+      window.adminReply = async (id) => {
+        const replyText = document.getElementById(`reply-to-${id}`).value;
+        const { doc, updateDoc } = window.fsAdmin;
+        try {
+          await updateDoc(doc(db, 'comments', id), { admin_reply: replyText });
+          alert('تم إرسال الرد! ✅');
+        } catch(e) { console.error(e); }
+      };
+
+      window.deleteComment = async (id) => {
+        if (confirm('حذف التعليق؟')) await deleteDoc(doc(db, 'comments', id));
+      };
+
+      // 2. Manage Gallery (File Upload + URL)
+      const galleryCol = collection(db, 'gallery');
+      onSnapshot(galleryCol, (snapshot) => {
+        const list = document.getElementById('admin-gallery-list');
+        const countEl = document.getElementById('count-gallery');
+        if (countEl) countEl.innerText = snapshot.size;
+        list.innerHTML = '';
+        snapshot.forEach((pDoc) => {
+          const data = pDoc.data();
+          const item = document.createElement('div');
+          item.className = 'img-grid-item';
+          item.innerHTML = `
+            <img src="${data.url}">
+            <div class="img-delete" onclick="deletePhoto('${pDoc.id}')"><i class="fas fa-trash-alt"></i></div>
+          `;
+          list.appendChild(item);
+        });
+      });
+
+      // File Upload Handler
+      window.handleGalleryUpload = (input) => {
+        const file = input.files[0];
+        if (!file) return;
+        if (file.size > 1048576) { alert('حجم الصورة كبير! الحد الأقصى 1MB'); return; }
+        const reader = new FileReader();
+        reader.onload = async () => {
+          await addDoc(galleryCol, { url: reader.result, caption: file.name, timestamp: new Date() });
+          input.value = '';
+          alert('تم رفع الصورة بنجاح! ✅');
+        };
+        reader.readAsDataURL(file);
+      };
+
+      window.addGalleryPhoto = async () => {
+        const url = document.getElementById('new-photo-url').value;
+        const caption = document.getElementById('new-photo-caption').value;
+        if(url) {
+          await addDoc(galleryCol, { url, caption, timestamp: new Date() });
+          document.getElementById('new-photo-url').value = '';
+          document.getElementById('new-photo-caption').value = '';
+          alert('تمت إضافة الصورة! ✅');
+        }
+      };
+
+      window.deletePhoto = async (id) => {
+        if (confirm('حذف الصورة؟')) await deleteDoc(doc(db, 'gallery', id));
+      };
+
+      // 3. Manage Music
+      window.updateSiteMusic = async () => {
+        const url = document.getElementById('site-music-url').value;
+        if(url) {
+          await setDoc(doc(db, 'settings', 'music'), { url });
+          alert('تم تحديث الموسيقى!');
+        }
+      };
+
+      // 4. Visitor Stats
+      const statsRef = doc(db, 'site_stats', 'total_visits');
+      getDoc(statsRef).then(snap => {
+        const countEl = document.getElementById('count-visits');
+        if (countEl && snap.exists()) countEl.innerText = snap.data().count || 0;
+      });
+
+      // 4. Section Editors - Load existing data
+      loadSectionData('about', ['phone', 'hours', 'duration', 'deposit']);
+      loadSectionData('conclusion', ['main', 'final']);
+
+      // Section Images (Credibility, Joy, Certificates)
+      initSectionImages('credibility', 'admin-cred-images');
+      initSectionImages('joy', 'admin-joy-images');
+      initSectionImages('certificates', 'admin-cert-images');
+    }
+
+    // --- Section Data Management ---
+    async function loadSectionData(section, fields) {
+      const { doc, getDoc } = window.fsAdmin;
+      const db = window.db;
+      const snap = await getDoc(doc(db, 'sections', section));
+      if (snap.exists()) {
+        const data = snap.data();
+        fields.forEach(field => {
+          const el = document.getElementById(`edit-${section === 'about' ? '' : section + '-'}${field}`);
+          if (!el) {
+            const altEl = document.getElementById(`edit-${field}`);
+            if (altEl && data[field]) altEl.value = data[field];
+          } else if (data[field]) {
+            el.value = data[field];
+          }
+        });
+      }
+    }
+
+    window.saveSection = async (section) => {
+      const { doc, setDoc } = window.fsAdmin;
+      const db = window.db;
+      let data = {};
+
+      if (section === 'about') {
+        data = {
+          phone: document.getElementById('edit-phone').value,
+          hours: document.getElementById('edit-hours').value,
+          duration: document.getElementById('edit-duration').value,
+          deposit: document.getElementById('edit-deposit').value
+        };
+      } else if (section === 'conclusion') {
+        data = {
+          main: document.getElementById('edit-conclusion-main').value,
+          final: document.getElementById('edit-conclusion-final').value
+        };
+      }
+
+      await setDoc(doc(db, 'sections', section), data);
+      alert('تم حفظ التعديلات بنجاح! ✅');
+    };
+
+    // --- Section Images Management ---
+    function initSectionImages(section, listId) {
+      const { collection, onSnapshot, deleteDoc, doc } = window.fsAdmin;
+      const db = window.db;
+      const col = collection(db, `section_images_${section}`);
+
+      onSnapshot(col, (snapshot) => {
+        const list = document.getElementById(listId);
+        list.innerHTML = '';
+        snapshot.forEach((pDoc) => {
+          const data = pDoc.data();
+          const item = document.createElement('div');
+          item.className = 'img-grid-item';
+          item.innerHTML = `
+            <img src="${data.url}">
+            <div class="img-delete" onclick="deleteSectionImg('${section}','${pDoc.id}')"><i class="fas fa-trash-alt"></i></div>
+          `;
+          list.appendChild(item);
+        });
+      });
+    }
+
+    // Handle File Uploads for all sections
+    window.handleSectionUpload = (section, input) => {
+      const { collection, addDoc } = window.fsAdmin;
+      const db = window.db;
+      const file = input.files[0];
+      if (!file) return;
+      if (file.size > 1048576) { alert('حجم الصورة كبير! الحد الأقصى 1MB'); return; }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        await addDoc(collection(db, `section_images_${section}`), { url: reader.result, caption: file.name, timestamp: new Date() });
+        input.value = '';
+        alert('تم رفع الصورة بنجاح! ✅');
+      };
+      reader.readAsDataURL(file);
+    };
+
+    window.addSectionImage = async (section) => {
+      const { collection, addDoc } = window.fsAdmin;
+      const db = window.db;
+      const prefixMap = { credibility: 'cred', joy: 'joy', certificates: 'cert' };
+      const prefix = prefixMap[section];
+      const url = document.getElementById(`${prefix}-img-url`).value;
+      const caption = document.getElementById(`${prefix}-img-caption`).value;
+      if (url) {
+        await addDoc(collection(db, `section_images_${section}`), { url, caption, timestamp: new Date() });
+        document.getElementById(`${prefix}-img-url`).value = '';
+        document.getElementById(`${prefix}-img-caption`).value = '';
+        alert('تمت إضافة الصورة! ✅');
+      }
+    };
+
+    window.deleteSectionImg = async (section, id) => {
+      const { doc, deleteDoc } = window.fsAdmin;
+      const db = window.db;
+      if (confirm('حذف الصورة؟')) await deleteDoc(doc(db, `section_images_${section}`, id));
+    };
+  </script>
+</body>
+</html>
+
