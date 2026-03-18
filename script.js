@@ -316,6 +316,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadSectionImages = (section, containerId) => {
       const container = document.getElementById(containerId);
       if (!container) return;
+      const isAdmin = localStorage.getItem('adminAuth') === '11543211';
 
       const renderImages = (images) => {
         container.innerHTML = '';
@@ -326,15 +327,20 @@ document.addEventListener('DOMContentLoaded', () => {
             item.className = 'cert-img-full reveal active';
             item.innerHTML = `
               <img src="${data.url}" class="thumbnail-img" style="width:100%; height:auto; object-fit:contain; border-radius:12px; margin-bottom:1.5rem;">
+              <div class="thumbnail-watermark">بصمة</div>
+              ${isAdmin ? `<button class="admin-inline-delete" data-id="${data.id}" title="حذف هذه الشهادة"><i class="fas fa-trash-alt"></i></button>` : ''}
             `;
           } else {
             item.className = 'gallery-item reveal active';
             item.innerHTML = `
               <img src="${data.url}" class="thumbnail-img" style="width:100%; height:100%; object-fit:cover;">
+              <div class="thumbnail-watermark">بصمة</div>
               <div class="gallery-caption">${data.caption || 'بصمة ديزاين'}</div>
+              ${isAdmin ? `<button class="admin-inline-delete" data-id="${data.id}" title="حذف هذه الصورة"><i class="fas fa-trash-alt"></i></button>` : ''}
             `;
             
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
+               if (e.target.closest('.admin-inline-delete')) return;
                const lightbox = document.querySelector('.lightbox-modal');
                if (lightbox) {
                  const lightboxImg = lightbox.querySelector('.lightbox-content');
@@ -347,21 +353,32 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           container.appendChild(item);
         });
+
+        if (isAdmin) {
+          container.querySelectorAll('.admin-inline-delete').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              if (confirm('هل أنت متأكد من حذف هذه الصورة؟ 🗑️')) {
+                try {
+                  const { doc, deleteDoc } = window.fsUtils;
+                  await deleteDoc(doc(window.firebaseDB, `section_images_${section}`, btn.dataset.id));
+                } catch (err) { console.error(err); }
+              }
+            });
+          });
+        }
       };
-      // 2. Listen to Firebase and overwrite if custom images exist
-      onSnapshot(collection(db, `section_images_${section}`), (snap) => {
+
+      onSnapshot(collection(window.firebaseDB, `section_images_${section}`), (snap) => {
         if (!snap.empty) {
-          const fbImages = snap.docs.map(d => ({ url: d.data().url, caption: d.data().caption }));
+          const fbImages = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           renderImages(fbImages);
         } else {
-          // If Firebase is completely empty, it shouldn't overwrite the local fallbacks.
           const localImgs = document.querySelectorAll('.gallery-thumbnails img');
           if (localImgs.length === 0) {
             container.innerHTML = `<p style="text-align:center; padding: 2rem; color: var(--text-secondary); width: 100%;">لم يتم رفع صور في هذا القسم بعد.</p>`;
           }
         }
-      }, (err) => {
-        console.warn("Firebase Image Load Error:", err);
       });
     };
 
@@ -388,11 +405,13 @@ document.addEventListener('DOMContentLoaded', () => {
                item.className = 'cert-img-full reveal active';
                item.innerHTML = `
                  <img src="${data.url}" class="thumbnail-img" style="width:100%; height:auto; object-fit:contain; border-radius:12px; margin-bottom:1.5rem;">
+                 <div class="thumbnail-watermark">بصمة</div>
                `;
              } else {
                item.className = 'gallery-item reveal active';
                item.innerHTML = `
                  <img src="${data.url}" class="thumbnail-img" style="width:100%; height:100%; object-fit:cover;">
+                 <div class="thumbnail-watermark">بصمة</div>
                  <div class="gallery-caption">${data.caption}</div>
                `;
                

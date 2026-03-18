@@ -1533,6 +1533,58 @@ footer p {
   box-shadow: 0 0 15px rgba(255, 75, 75, 0.4);
 }
 
+/* Admin In-Place Controls */
+.admin-inline-delete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 75, 75, 0.9);
+  color: #fff;
+  border: 1px solid #fff;
+  border-radius: 6px;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 50;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* Global Thumbnail Watermark */
+.thumbnail-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.25);
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+  z-index: 5;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.cert-img-full .thumbnail-watermark {
+  font-size: 2.5rem;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.admin-inline-delete:hover {
+  background: #ff0000;
+  transform: scale(1.1);
+}
+
+.admin-inline-delete i {
+  font-size: 1rem;
+}
+
 /* Floating Elements */
 .floating-element {
   position: absolute;
@@ -1822,13 +1874,12 @@ footer p {
     opacity: 1 !important;
 }
 
-/* Full Width Certificates Style */
+/* Optimized Certificate Style (Side-by-Side) */
 .cert-img-full {
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto 2rem auto;
+  max-width: 450px;
+  margin: 0 auto 1.5rem auto;
   display: block;
-  grid-column: 1 / -1; /* Ensures it spans across mobile 2-column layout */
 }
 .cert-img-full img {
   width: 100%;
