@@ -288,8 +288,14 @@ if (contactForm) {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
           const hidden = JSON.parse(localStorage.getItem('basma_hidden') || '[]');
-          hidden.push(id);
-          localStorage.setItem('basma_hidden', JSON.stringify(hidden));
+          if (!hidden.includes(id)) {
+            hidden.push(id);
+            localStorage.setItem('basma_hidden', JSON.stringify(hidden));
+          }
+          // Also remove from localStorage reviews (if not Firebase)
+          const lsReviews = JSON.parse(localStorage.getItem('basma_reviews') || '[]');
+          const filtered = lsReviews.filter(r => (r.id || r.date?.toString()) !== id);
+          localStorage.setItem('basma_reviews', JSON.stringify(filtered));
           btn.closest('.review-card').remove();
         });
       });
