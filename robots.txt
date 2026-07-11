@@ -1,0 +1,23 @@
+# robots.txt — بصمة ديزاين | Basma Design
+# https://basma-design.vercel.app
+
+User-agent: *
+Allow: /
+
+# Block admin/internal paths if any
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://basma-design.vercel.app/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Google-specific
+User-agent: Googlebot
+Allow: /
+
+# Bing-specific
+User-agent: Bingbot
+Allow: /

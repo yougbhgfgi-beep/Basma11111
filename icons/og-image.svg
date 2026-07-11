@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d0221"/>
+      <stop offset="50%" style="stop-color:#1a0536"/>
+      <stop offset="100%" style="stop-color:#0d0221"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#ec4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="6" fill="url(#accent)"/>
+  <text x="600" y="240" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="white" direction="rtl">بصمة ديزاين</text>
+  <text x="600" y="310" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#c084fc" direction="rtl">Basma Design</text>
+  <text x="600" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#8888aa" direction="rtl">مواقع رومانسية | هدايا رقمية | تصميم ويب</text>
+  <text x="600" y="440" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#ec4899">💜 Love Website • Romantic Website • Birthday Website</text>
+  <rect x="0" y="624" width="1200" height="6" fill="url(#accent)"/>
+</svg>
