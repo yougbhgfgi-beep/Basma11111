@@ -4,7 +4,7 @@ let fb = null;
 
 (async function initFirebase() {
   try {
-    const [{ initializeApp }, { getFirestore, collection, addDoc, getDocs, query, orderBy, limit }] = await Promise.all([
+    const [{ initializeApp }, { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, deleteDoc, doc }] = await Promise.all([
       import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"),
       import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
     ]);
@@ -41,6 +41,15 @@ let fb = null;
         } catch (e) {
           console.warn("Firebase load failed:", e);
           return null;
+        }
+      },
+      async deleteReviewFB(id) {
+        try {
+          await deleteDoc(doc(db, "reviews", id));
+          return true;
+        } catch (e) {
+          console.warn("Firebase delete failed:", e);
+          return false;
         }
       }
     };
@@ -287,16 +296,23 @@ if (contactForm) {
       container.querySelectorAll('.review-del').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = btn.dataset.id;
+          // Delete from Firebase if available (Firebase doc IDs are strings like "abc123")
+          const currentFb = window.__fb;
+          if (currentFb && currentFb.deleteReviewFB && id.length > 10) {
+            await currentFb.deleteReviewFB(id);
+          }
+          // Also remove from localStorage reviews
+          const lsReviews = JSON.parse(localStorage.getItem('basma_reviews') || '[]');
+          const filtered = lsReviews.filter(r => (r.id || r.date?.toString()) !== id);
+          localStorage.setItem('basma_reviews', JSON.stringify(filtered));
+          // Store in hidden list (catches seed reviews and any leftovers)
           const hidden = JSON.parse(localStorage.getItem('basma_hidden') || '[]');
           if (!hidden.includes(id)) {
             hidden.push(id);
             localStorage.setItem('basma_hidden', JSON.stringify(hidden));
           }
-          // Also remove from localStorage reviews (if not Firebase)
-          const lsReviews = JSON.parse(localStorage.getItem('basma_reviews') || '[]');
-          const filtered = lsReviews.filter(r => (r.id || r.date?.toString()) !== id);
-          localStorage.setItem('basma_reviews', JSON.stringify(filtered));
-          btn.closest('.review-card').remove();
+          // Reload to sync
+          await loadReviews();
         });
       });
     }
