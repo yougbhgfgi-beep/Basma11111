@@ -1,565 +1,531 @@
-document.addEventListener('DOMContentLoaded', () => {
-  /* ========================================
-     0. Preloader & Page Transitions
-  ======================================== */
-  
-  // Page transitions on internal link clicks
-  const transition = document.getElementById('pageTransition');
-  if (transition) {
-    document.querySelectorAll('a[href]').forEach(link => {
-      const href = link.getAttribute('href');
-      if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('javascript') && !href.startsWith('tel:') && !href.startsWith('mailto:')) {
-        link.addEventListener('click', e => {
-          if (e.metaKey || e.ctrlKey) return;
-          e.preventDefault();
-          transition.classList.add('active');
-          setTimeout(() => { window.location.href = href; }, 400);
-        });
+// === FIREBASE (dynamic import — won't kill the rest of the app if CDN fails) ===
+let fbAvailable = false;
+let fb = null;
+
+(async function initFirebase() {
+  try {
+    const [{ initializeApp }, { getFirestore, collection, addDoc, getDocs, query, orderBy, limit }] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js")
+    ]);
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD-iyTRgapV0BSPnq89n7Tp6e0VJDIaBgo",
+      authDomain: "shrydj-1c7ce.firebaseapp.com",
+      projectId: "shrydj-1c7ce",
+      storageBucket: "shrydj-1c7ce.firebasestorage.app",
+      messagingSenderId: "1069074155143",
+      appId: "1:1069074155143:web:d5ca3cfee283326f1d1a22",
+      measurementId: "G-H5R2NQ1ZKQ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    fbAvailable = true;
+
+    window.__fb = {
+      async saveReviewFB(name, msg) {
+        try {
+          await addDoc(collection(db, "reviews"), { name, msg, date: Date.now() });
+          return true;
+        } catch (e) {
+          console.warn("Firebase save failed:", e);
+          return false;
+        }
+      },
+      async loadReviewsFB() {
+        try {
+          const q = query(collection(db, "reviews"), orderBy("date", "desc"), limit(20));
+          const snap = await getDocs(q);
+          return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch (e) {
+          console.warn("Firebase load failed:", e);
+          return null;
+        }
       }
-    });
+    };
+    fb = window.__fb;
+  } catch (e) {
+    console.warn("Firebase not available (CDN may be down):", e);
   }
+})();
 
-  /* ========================================
-     1. Toast Notification System
-  ======================================== */
-  const toastContainer = document.createElement('div');
-  toastContainer.className = 'toast-container';
-  document.body.appendChild(toastContainer);
+// === REVIEWS ===
+let adminMode = false;
 
-  window.showToast = (message, type = 'info', duration = 4000) => {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.textContent = message;
-    toastContainer.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(100px)';
-      toast.style.transition = 'all 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
-    }, duration);
-  };
-
-  /* ========================================
-     2. Mobile Menu Toggle
-  ======================================== */
-  const menuToggle = document.querySelector('.menu-toggle');
-  const navMenu = document.querySelector('nav ul');
-
-  if (menuToggle) {
-    menuToggle.addEventListener('click', () => {
-      navMenu.classList.toggle('show');
-      const icon = menuToggle.querySelector('i');
-      if (navMenu.classList.contains('show')) {
-        icon.classList.replace('fa-bars', 'fa-times');
-      } else {
-        icon.classList.replace('fa-times', 'fa-bars');
-      }
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+const hamburger = document.getElementById('hamburger');
+const nav = document.getElementById('nav');
+if (hamburger && nav) {
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    nav.classList.toggle('open');
+  });
+  document.querySelectorAll('.nav__link').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('active');
+      nav.classList.remove('open');
     });
+  });
+}
 
-    navMenu.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        navMenu.classList.remove('show');
-        menuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-      });
-    });
+// === HEADER SCROLL EFFECT ===
+const header = document.getElementById('header');
+let lastScroll = 0;
+window.addEventListener('scroll', () => {
+  const scrollY = window.scrollY;
+  header.classList.toggle('scrolled', scrollY > 50);
+  lastScroll = scrollY;
+});
 
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('header') && navMenu.classList.contains('show')) {
-        navMenu.classList.remove('show');
-        menuToggle.querySelector('i').classList.replace('fa-times', 'fa-bars');
-      }
-    });
-  }
+// === ACTIVE NAV LINK ===
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav__link');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const top = section.offsetTop - 150;
+    if (window.scrollY >= top) current = section.getAttribute('id');
+  });
+  navLinks.forEach(link => {
+    link.classList.toggle('active', link.getAttribute('href') === '#' + current);
+  });
+});
 
-  /* ========================================
-     3. Active Nav Link
-  ======================================== */
-  const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-  document.querySelectorAll('nav ul li a').forEach(link => {
-    if (link.getAttribute('href') === currentPath) {
-      link.classList.add('active');
+// === STATS COUNTER ===
+function animateCounters() {
+  const stats = document.querySelectorAll('.stat__num');
+  stats.forEach(stat => {
+    const target = parseFloat(stat.dataset.count);
+    const duration = 2000;
+    const startTime = performance.now();
+    const isFloat = target % 1 !== 0;
+
+    function update(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = eased * target;
+      stat.textContent = isFloat ? current.toFixed(1) : Math.floor(current);
+      if (progress < 1) requestAnimationFrame(update);
     }
+    requestAnimationFrame(update);
+  });
+}
+
+// === LOAD GALLERIES ===
+function createGalleryItem(url, alt, watermarkText) {
+  const item = document.createElement('div');
+  item.className = 'gallery__item';
+
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = alt;
+  img.loading = 'lazy';
+
+  const stamp = document.createElement('div');
+  stamp.className = 'gallery__watermark-stamp';
+  stamp.textContent = 'بصمة ديزاين';
+
+  const overlay = document.createElement('div');
+  overlay.className = 'gallery__watermark';
+  const span = document.createElement('span');
+  span.textContent = watermarkText || '💜 بصمة ديزاين';
+  overlay.appendChild(span);
+
+  item.appendChild(img);
+  item.appendChild(stamp);
+  item.appendChild(overlay);
+
+  item.addEventListener('click', (e) => {
+    e.preventDefault();
+    openLightbox(url, watermarkText);
   });
 
-  /* ========================================
-     4. Admin Star Password Gate
-  ======================================== */
-  window.adminStarClick = () => {
-    const pass = prompt('⭐ أدخل كلمة السر:');
-    if (pass === '11543211') {
-      window.location.href = 'admin.html';
-    }
-  };
+  img.onerror = () => { item.style.display = 'none'; };
 
-  /* ========================================
-     5. Language Translation
-  ======================================== */
-  window.translatePage = (lang) => {
-    if (lang === 'ar') {
-      const frame = document.querySelector('.goog-te-banner-frame');
-      if (frame) frame.remove();
-      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      location.reload();
+  return item;
+}
+
+function loadGalleries() {
+  const credImages = Array.from({ length: 11 }, (_, i) => `assets/cred_${i + 1}.jpeg`);
+  const credGallery = document.getElementById('credibilityGallery');
+  if (credGallery) {
+    credImages.forEach(src => credGallery.appendChild(createGalleryItem(src, 'ثقة العملاء', '🤝 ثقة عملاء')));
+  }
+
+  const joyImages = Array.from({ length: 18 }, (_, i) => `assets/joy_${i + 1}.jpeg`);
+  const joyGallery = document.getElementById('joyGallery');
+  if (joyGallery) {
+    joyImages.forEach(src => joyGallery.appendChild(createGalleryItem(src, 'فرحة العملاء', '😊 فرحة عملاء')));
+  }
+
+  const certImages = Array.from({ length: 2 }, (_, i) => `assets/cert_${i + 1}.jpeg`);
+  const certGallery = document.getElementById('certificatesGallery');
+  if (certGallery) {
+    certImages.forEach(src => certGallery.appendChild(createGalleryItem(src, 'شهادة', '📜 شهادة')));
+  }
+}
+
+// === SCROLL ANIMATION (Fade In) ===
+function handleScrollAnimation() {
+  const elements = document.querySelectorAll('.service-card, .portfolio__item, .campaign__banner, .tiktok-promo__inner, .contact__grid, .credibility__card, .review-card, .certificates__content');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('fade-up', 'visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+  elements.forEach(el => {
+    el.classList.add('fade-up');
+    observer.observe(el);
+  });
+
+  if (!window._countersTriggered) {
+    const statsSection = document.querySelector('.hero__stats');
+    if (statsSection) {
+      const statsObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            animateCounters();
+            window._countersTriggered = true;
+            statsObserver.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.5 });
+      statsObserver.observe(statsSection);
+    }
+  }
+}
+
+// === COUNTDOWN TIMER ===
+function startCountdown() {
+  const storageKey = 'basma_countdown_end';
+  let endDate = localStorage.getItem(storageKey);
+
+  if (endDate && new Date(parseInt(endDate)) > new Date()) {
+    endDate = new Date(parseInt(endDate));
+  } else {
+    endDate = new Date();
+    endDate.setDate(endDate.getDate() + 7);
+    endDate.setHours(23, 59, 59, 0);
+    localStorage.setItem(storageKey, endDate.getTime().toString());
+  }
+
+  function update() {
+    const now = new Date();
+    const diff = endDate - now;
+    if (diff <= 0) return;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    const d = document.getElementById('days');
+    const h = document.getElementById('hours');
+    const m = document.getElementById('minutes');
+    const s = document.getElementById('seconds');
+    if (d) d.textContent = String(days).padStart(2, '0');
+    if (h) h.textContent = String(hours).padStart(2, '0');
+    if (m) m.textContent = String(minutes).padStart(2, '0');
+    if (s) s.textContent = String(seconds).padStart(2, '0');
+  }
+  update();
+  setInterval(update, 1000);
+}
+
+// === CONTACT FORM / REVIEWS ===
+const contactForm = document.getElementById('contactForm');
+if (contactForm) {
+  const nameInput = document.getElementById('reviewerName');
+  const msgInput = document.getElementById('reviewerMsg');
+
+  const seedReviews = [
+    { name: 'نورهان', msg: 'أجمل هدية حصلت عليها في حياتي، الموقع كان رهيب جداً ومفاجأة حبيبي كانت لا تُنسى', date: -3 },
+    { name: 'أحمد', msg: 'شغل متقن جداً وتفاصيل دقيقة، توصيل في نفس اليوم. أنصح الكل يتعامل مع بصمة ديزاين', date: -2 },
+    { name: 'يوسف', msg: 'صراحة ما توقعت النتيجة تكون كذا جميلة، موقع قصة حب خطف قلب حبيبتي. شكراً لكم', date: -1 }
+  ];
+
+  async function loadReviews() {
+    const container = document.getElementById('reviewsDynamic');
+    if (!container) return;
+
+    let reviews = null;
+    const currentFb = window.__fb;
+    if (currentFb) reviews = await currentFb.loadReviewsFB();
+    if (!reviews) {
+      reviews = JSON.parse(localStorage.getItem('basma_reviews') || '[]');
+    }
+
+    if (!reviews.length) {
+      reviews = seedReviews;
+    }
+
+    const hidden = JSON.parse(localStorage.getItem('basma_hidden') || '[]');
+    const visible = reviews.filter(r => !hidden.includes(r.id || r.date?.toString()));
+
+    const isAdmin = document.body.classList.contains('admin-mode');
+
+    container.innerHTML = visible.map((r, i) => {
+      const id = r.id || r.date?.toString() || i.toString();
+      return `
+      <div class="review-card review-card--user">
+        ${isAdmin ? `<button class="review-del" data-id="${id}" data-msg="${escapeHTML(r.msg)}" data-name="${escapeHTML(r.name)}" title="حذف">✕</button>` : ''}
+        <div class="review-card__stars">★★★★★</div>
+        <p>"${escapeHTML(r.msg)}"</p>
+        <span class="review-card__name">— ${escapeHTML(r.name)}</span>
+      </div>
+    `}).join('');
+
+    // Delete handlers
+    if (isAdmin) {
+      container.querySelectorAll('.review-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = btn.dataset.id;
+          const hidden = JSON.parse(localStorage.getItem('basma_hidden') || '[]');
+          hidden.push(id);
+          localStorage.setItem('basma_hidden', JSON.stringify(hidden));
+          btn.closest('.review-card').remove();
+        });
+      });
+    }
+  }
+
+  // Blocked words
+  const blockedWords = [
+    'كس', 'كسم', 'شرموط', 'شرموطة', 'خول', 'خولة', 'قحبة', 'قحب',
+    'منيوك', 'منيوكة', 'عرص', 'مخنث', 'لوطي', 'سحق', 'سحاق',
+    'نيالك', 'نيها', 'متناك', 'أحا', 'احا', 'ايه', 'fuck', 'fuckyou',
+    'bitch', 'whore', 'slut', 'cunt', 'dick', 'shit', 'asshole',
+    'motherfucker', 'ابن', 'المتناكة', 'المنيوك', 'الشرموط',
+    'العرص', 'الخول'
+  ];
+
+  function hasBlockedWords(text) {
+    const t = text.replace(/\s/g, '').toLowerCase();
+    return blockedWords.some(w => {
+      const cleanW = w.replace(/\s/g, '').toLowerCase();
+      return t.includes(cleanW) || text.toLowerCase().includes(w.toLowerCase());
+    });
+  }
+
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const msg = msgInput.value.trim();
+    if (!name || !msg) return;
+
+    if (hasBlockedWords(name) || hasBlockedWords(msg)) {
+      const btn = contactForm.querySelector('button[type="submit"]');
+      const orig = btn.textContent;
+      btn.textContent = '⛔ ممنوع! لا للشتائم';
+      btn.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+      setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.background = '';
+      }, 2000);
       return;
     }
-    document.cookie = `googtrans=/ar/${lang}; path=/;`;
-    document.cookie = `googtrans=/ar/${lang}; path=/; domain=${location.hostname};`;
-    location.reload();
-  };
 
-  /* ========================================
-     6. Credibility Page: Hidden Sections
-  ======================================== */
-  const mainView = document.getElementById('main-view');
-  const detailSections = document.querySelectorAll('.detail-section');
-  const backBtns = document.querySelectorAll('.back-btn');
+    const currentFb = window.__fb;
+    if (currentFb) {
+      await currentFb.saveReviewFB(name, msg);
+    } else {
+      const saved = JSON.parse(localStorage.getItem('basma_reviews') || '[]');
+      saved.unshift({ id: 'r_' + Date.now(), name, msg, date: Date.now() });
+      localStorage.setItem('basma_reviews', JSON.stringify(saved.slice(0, 20)));
+    }
 
-  document.querySelectorAll('.gallery-item[data-target]').forEach(item => {
-    item.addEventListener('click', () => {
-      const target = document.getElementById(item.getAttribute('data-target'));
-      if (target && mainView) {
-        mainView.style.display = 'none';
-        target.style.display = 'block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    });
+    await loadReviews();
+    contactForm.reset();
+
+    const btn = contactForm.querySelector('button[type="submit"]');
+    const orig = btn.textContent;
+    btn.textContent = '✅ تم الإرسال!';
+    btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.style.background = '';
+    }, 2000);
   });
 
-  backBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      detailSections.forEach(s => s.style.display = 'none');
-      if (mainView) mainView.style.display = 'block';
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  });
+  loadReviews();
 
-  /* ========================================
-     7. Lightbox
-  ======================================== */
-  const thumbnails = document.querySelectorAll('.thumbnail-img');
-  if (thumbnails.length > 0) {
-    const lightbox = document.createElement('div');
-    lightbox.className = 'lightbox-modal';
-    lightbox.innerHTML = `
-      <span class="lightbox-close">&times;</span>
-      <div style="position:relative; max-width:90%; max-height:90vh; display:flex; justify-content:center; align-items:center;">
-        <img class="lightbox-content" src="">
-        <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) rotate(-30deg); font-size:3.5rem; font-weight:bold; color:rgba(255,255,255,0.4); text-shadow:2px 2px 5px rgba(0,0,0,0.8); pointer-events:none; user-select:none; white-space:nowrap;">بصمة ديزاين</div>
-      </div>
-    `;
-    document.body.appendChild(lightbox);
-
-    const lightboxImg = lightbox.querySelector('.lightbox-content');
-    const closeBtn = lightbox.querySelector('.lightbox-close');
-
-    thumbnails.forEach(img => {
-      const wrapper = document.createElement('div');
-      wrapper.className = 'watermark-wrapper';
-      img.parentNode.insertBefore(wrapper, img);
-      wrapper.appendChild(img);
-
-      wrapper.addEventListener('click', () => {
-        lightboxImg.src = img.src;
-        lightbox.style.display = 'flex';
-      });
-    });
-
-    const closeLightbox = () => {
-      lightbox.style.display = 'none';
-      lightboxImg.src = '';
-    };
-    closeBtn.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', e => {
-      if (e.target === lightbox) closeLightbox();
-    });
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeLightbox();
-    });
-  }
-
-  /* ========================================
-     8. Custom Cursor
-  ======================================== */
-  const cursor = document.querySelector('.custom-cursor');
-  if (cursor) {
-    let mouseX = 0, mouseY = 0, cursorX = 0, cursorY = 0;
-
-    function animateCursor() {
-      cursorX += (mouseX - cursorX) * 0.2;
-      cursorY += (mouseY - cursorY) * 0.2;
-      cursor.style.left = cursorX + 'px';
-      cursor.style.top = cursorY + 'px';
-      requestAnimationFrame(animateCursor);
-    }
-    animateCursor();
-
-    document.addEventListener('mousemove', e => { mouseX = e.clientX; mouseY = e.clientY; });
-    document.addEventListener('mousedown', () => cursor.style.transform = 'translate(-50%, -50%) scale(0.5)');
-    document.addEventListener('mouseup', () => cursor.style.transform = 'translate(-50%, -50%) scale(1)');
-
-    document.querySelectorAll('a, button, .gallery-item, .btn, .mockup-frame').forEach(el => {
-      el.addEventListener('mouseenter', () => {
-        cursor.style.cssText += 'background:rgba(212,175,55,0.4); border:1px solid transparent; width:60px; height:60px; mix-blend-mode:screen; filter:blur(4px);';
-      });
-      el.addEventListener('mouseleave', () => {
-        cursor.style.background = 'transparent';
-        cursor.style.border = '2px solid var(--accent-gold)';
-        cursor.style.width = '20px';
-        cursor.style.height = '20px';
-        cursor.style.mixBlendMode = 'difference';
-        cursor.style.filter = 'none';
-      });
-    });
-  }
-
-  /* ========================================
-     9. Floating Particles
-  ======================================== */
-  const particlesContainer = document.getElementById('particles-container');
-  if (particlesContainer) {
-    const icons = ['fa-heart', 'fa-star', 'fa-sparkles', 'fa-leaf'];
-    for (let i = 0; i < 15; i++) {
-      const p = document.createElement('i');
-      p.className = `fas ${icons[Math.floor(Math.random() * icons.length)]} particle`;
-      p.style.left = Math.random() * 100 + 'vw';
-      p.style.animationDelay = Math.random() * 10 + 's';
-      p.style.fontSize = (Math.random() * 1 + 0.5) + 'rem';
-      particlesContainer.appendChild(p);
-    }
-  }
-
-  /* ========================================
-     10. Scroll Reveal
-  ======================================== */
-  const initReveal = () => {
-    const elements = document.querySelectorAll('.reveal, .gallery-item, .feature-card, .demo-visual');
-    if (elements.length === 0) return;
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('active');
-          entry.target.style.transform = 'translateY(0) scale(1)';
-          entry.target.style.opacity = '1';
-        }
-      });
-    }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
-
-    elements.forEach(el => {
-      el.style.opacity = '0';
-      el.style.transform = 'translateY(40px) scale(0.95)';
-      el.style.transition = 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-      observer.observe(el);
-    });
-
-    document.addEventListener('scroll', () => {
-      const bubbles = document.querySelector('.bg-bubbles');
-      if (bubbles) {
-        bubbles.style.transform = `translateY(${window.scrollY * 0.3}px)`;
+  // Secret admin: 8 clicks on logo
+  let clickCount = 0;
+  const logo = document.querySelector('.logo');
+  if (logo) {
+    logo.addEventListener('click', (e) => {
+      clickCount++;
+      e.preventDefault();
+      if (clickCount >= 8) {
+        clickCount = 0;
+        adminMode = !adminMode;
+        document.body.classList.toggle('admin-mode', adminMode);
+        const msg = adminMode ? '🔐 وضع المشرف نشط — اضغط ✕ لحذف أي رأي' : '🔒 وضع المشرف معطل';
+        const toast = document.createElement('div');
+        toast.textContent = msg;
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#7c3aed;color:#fff;padding:12px 24px;border-radius:12px;z-index:9999;font-size:0.9rem;box-shadow:0 8px 32px rgba(0,0,0,0.5);transition:opacity 0.3s;';
+        document.body.appendChild(toast);
+        setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
+        if (adminMode) loadReviews();
       }
     });
-  };
-  initReveal();
+  }
+}
 
-  /* ========================================
-     11. Music Player
-  ======================================== */
-  let bgMusic = new Audio('bg-music.mp4');
-  bgMusic.loop = true;
-  bgMusic.volume = 0.3;
+// === LIGHTBOX ===
+let lightboxEl = null;
+function openLightbox(imgUrl, watermarkText) {
+  if (!lightboxEl) {
+    lightboxEl = document.createElement('div');
+    lightboxEl.id = 'lightbox';
+    lightboxEl.innerHTML = `
+      <div class="lightbox__overlay"></div>
+      <div class="lightbox__content">
+        <button class="lightbox__close">&times;</button>
+        <div class="lightbox__image-wrap">
+          <img class="lightbox__img" src="" alt="" />
+          <div class="lightbox__watermark">${watermarkText || '💜 بصمة ديزاين'}</div>
+          <div class="lightbox__stamp">بصمة ديزاين</div>
+        </div>
+      </div>`;
+    document.body.appendChild(lightboxEl);
+    lightboxEl.querySelector('.lightbox__overlay').addEventListener('click', closeLightbox);
+    lightboxEl.querySelector('.lightbox__close').addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+  }
+  lightboxEl.querySelector('.lightbox__img').src = imgUrl;
+  lightboxEl.querySelector('.lightbox__watermark').textContent = watermarkText || '💜 بصمة ديزاين';
+  lightboxEl.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  if (lightboxEl) {
+    lightboxEl.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
 
-  const musicToggle = document.getElementById('musicToggle');
-  if (musicToggle) musicToggle.style.display = 'flex';
+// === PARTICLES ===
+function initParticles() {
+  const container = document.getElementById('particlesContainer');
+  if (!container) return;
+  const icons = ['fa-heart', 'fa-star', 'fa-heart'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('i');
+    p.className = `fas ${icons[Math.floor(Math.random() * icons.length)]} particle`;
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.animationDelay = Math.random() * 12 + 's';
+    p.style.fontSize = (Math.random() * 1 + 0.6) + 'rem';
+    p.style.animationDuration = (Math.random() * 6 + 8) + 's';
+    container.appendChild(p);
+  }
+}
 
-  const savedTime = sessionStorage.getItem('music_time');
+// === MUSIC PLAYER ===
+let bgMusic = null;
+let musicToggle = null;
+
+function initMusic() {
+  musicToggle = document.getElementById('musicToggle');
+  if (!musicToggle) return;
+
+  if (!window.__bgMusic) {
+    window.__bgMusic = new Audio('/audio.mp3');
+    window.__bgMusic.loop = true;
+    window.__bgMusic.volume = 0.3;
+  }
+  bgMusic = window.__bgMusic;
+
+  const savedTime = sessionStorage.getItem('bd_music_time');
   if (savedTime) bgMusic.currentTime = parseFloat(savedTime);
 
-  const updateMusicUI = () => {
-    if (!musicToggle) return;
+  const updateUI = () => {
     if (!bgMusic.paused) {
       musicToggle.classList.add('playing');
-      musicToggle.querySelector('i').className = 'fas fa-pause';
+      musicToggle.innerHTML = '<i class="music-toggle__icon">⏸️</i>';
     } else {
       musicToggle.classList.remove('playing');
-      musicToggle.querySelector('i').className = 'fas fa-music';
+      musicToggle.innerHTML = '<i class="music-toggle__icon">🎵</i>';
     }
   };
 
-  // Periodic save & UI sync
   setInterval(() => {
-    if (!bgMusic.paused) {
-      sessionStorage.setItem('music_time', bgMusic.currentTime);
+    if (bgMusic && !bgMusic.paused) {
+      sessionStorage.setItem('bd_music_time', bgMusic.currentTime);
     }
-    updateMusicUI();
   }, 1000);
 
-  // Music toggle click handler
-  if (musicToggle) {
-    musicToggle.addEventListener('click', () => {
-      if (bgMusic.paused) {
-        bgMusic.play().then(() => {
-          sessionStorage.setItem('music_playing', 'true');
-          updateMusicUI();
-        }).catch(() => {});
-      } else {
-        bgMusic.pause();
-        sessionStorage.setItem('music_playing', 'false');
-        updateMusicUI();
-      }
-    });
-  }
-
-  // Intro Overlay & Music Logic
-  const introOverlay = document.getElementById('intro-overlay');
-  const enterBtn = document.getElementById('enter-btn');
-  
-  if (introOverlay && enterBtn) {
-    document.body.style.overflow = 'hidden';
-
-    enterBtn.addEventListener('click', () => {
-      introOverlay.classList.add('hidden');
-      document.body.style.overflow = '';
-      
+  musicToggle.addEventListener('click', () => {
+    if (bgMusic.paused) {
       bgMusic.play().then(() => {
-        sessionStorage.setItem('music_playing', 'true');
-        updateMusicUI();
+        sessionStorage.setItem('bd_music_playing', 'true');
+        updateUI();
       }).catch(() => {});
-    });
-  } else {
-    const playMusic = () => {
-      bgMusic.play().then(() => {
-        sessionStorage.setItem('music_playing', 'true');
-        updateMusicUI();
-      }).catch(() => {});
-      document.removeEventListener('click', playMusic);
-    };
-    document.addEventListener('click', playMusic, { once: true });
-  }
-
-  // Resume listener (reusable)
-  const attachResumeListener = () => {
-    const resume = () => {
-      bgMusic.play().then(() => {
-        sessionStorage.setItem('music_playing', 'true');
-        updateMusicUI();
-      }).catch(() => {});
-      ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
-        document.removeEventListener(evt, resume);
-      });
-    };
-    ['click', 'touchstart', 'keydown', 'mousedown'].forEach(evt => {
-      document.addEventListener(evt, resume, { once: true });
-    });
-  };
-
-  // Handle demo link music pause + re-attach resume
-  document.querySelectorAll('.mockup-btn').forEach(link => {
-    link.addEventListener('click', (e) => {
+    } else {
       bgMusic.pause();
-      sessionStorage.setItem('music_time', bgMusic.currentTime);
-      sessionStorage.setItem('music_playing', 'true');
-      updateMusicUI();
-      // Delay to avoid the same click re-triggering play
-      setTimeout(attachResumeListener, 100);
+      sessionStorage.setItem('bd_music_playing', 'false');
+      updateUI();
+    }
+  });
+}
+
+// === INTRO OVERLAY ===
+// (handled by inline script in index.html to avoid Firebase dependency)
+
+// === LANGUAGE SWITCHER (Google Translate) ===
+function googleTranslateElementInit() {
+  new google.translate.TranslateElement({
+    pageLanguage: 'ar',
+    includedLanguages: 'ar,en,fr',
+    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+    autoDisplay: false
+  }, 'google_translate_element');
+}
+window.googleTranslateElementInit = googleTranslateElementInit;
+
+// === PAGE TRANSITION FOR EXTERNAL LINKS ===
+function initPageTransitions() {
+  const transition = document.getElementById('pageTransition');
+  if (!transition) return;
+  document.querySelectorAll('a[target="_blank"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const href = link.getAttribute('href');
+      if (href && href.includes('github.io')) {
+        transition.classList.add('active');
+        setTimeout(() => transition.classList.remove('active'), 500);
+      }
     });
   });
+}
 
-  /* ========================================
-     12. Firebase Integration
-  ======================================== */
-  const checkFirebase = setInterval(() => {
-    if (window.fsUtils) {
-      clearInterval(checkFirebase);
-      if (document.getElementById('review-form') && document.getElementById('comments-display')) {
-        initComments();
-      }
-      runAnalytics();
-      checkAdminSession();
-      initDynamicContent();
+// === INIT ===
+document.addEventListener('DOMContentLoaded', () => {
+  window.scrollTo(0, 0);
+  initParticles();
+  initMusic();
+  initPageTransitions();
+  loadGalleries();
+  startCountdown();
+  handleScrollAnimation();
+
+  setTimeout(() => {
+    const overlay = document.getElementById('introOverlay');
+    if (!overlay || overlay.classList.contains('hidden')) {
+      const mt = document.getElementById('musicToggle');
+      if (mt) mt.style.display = 'flex';
     }
   }, 500);
 
-  function initDynamicContent() {
-    const { doc, onSnapshot, collection } = window.fsUtils;
-    const db = window.firebaseDB;
-
-    onSnapshot(doc(db, 'settings', 'music'), snap => {
-      if (snap.exists() && snap.data().url) {
-        const url = snap.data().url;
-        if (bgMusic.src !== url && url.startsWith('http')) {
-          bgMusic.src = url;
-        }
-      }
-    });
-
-    const loadPageData = (section) => {
-      onSnapshot(doc(db, 'sections', section), snap => {
-        if (!snap.exists()) return;
-        const data = snap.data();
-        if (section === 'about') {
-          const phoneEl = document.querySelector('.phone-number');
-          if (phoneEl && data.phone) phoneEl.innerText = data.phone;
-        } else if (section === 'conclusion') {
-          const mainEl = document.querySelector('.conclusion-text');
-          if (mainEl && data.main) mainEl.innerText = data.main;
-          const finalEl = document.querySelector('.final-text');
-          if (finalEl && data.final) finalEl.innerText = data.final;
-        }
-      });
-    };
-
-    loadPageData('about');
-    loadPageData('conclusion');
-
-    const sectionMap = [
-      { section: 'credibility', containerId: 'credibility-grid' },
-      { section: 'joy', containerId: 'joy-grid' },
-      { section: 'certificates', containerId: 'certificates-grid' }
-    ];
-
-    sectionMap.forEach(({ section, containerId }) => {
-      const container = document.getElementById(containerId);
-      if (!container) return;
-      const fallbackId = containerId.replace('-grid', '-fallback');
-      const fallback = document.getElementById(fallbackId);
-      onSnapshot(collection(db, `section_images_${section}`), snap => {
-        container.innerHTML = '';
-        if (snap.size > 0) {
-          if (fallback) fallback.style.display = 'none';
-          snap.forEach(pDoc => {
-            const data = pDoc.data();
-            const item = document.createElement('div');
-            item.className = 'gallery-item reveal active';
-            item.style.cursor = 'default';
-            item.innerHTML = `<img src="${data.url}" class="thumbnail-img" style="width:100%;height:100%;object-fit:cover;">`;
-            container.appendChild(item);
-          });
-        } else {
-          if (fallback) fallback.style.display = 'grid';
-        }
-      });
-    });
-  }
-
-  /* ========================================
-     13. Comments System
-  ======================================== */
-  function initComments() {
-    const { collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } = window.fsUtils;
-    const db = window.firebaseDB;
-    const commentsCol = collection(db, 'comments');
-    const q = query(commentsCol, orderBy('timestamp', 'asc'));
-    const commentsDisplay = document.getElementById('comments-display');
-
-    onSnapshot(q, snapshot => {
-      commentsDisplay.innerHTML = '';
-      if (snapshot.empty) {
-        commentsDisplay.innerHTML = '<div class="comment-card glass-panel" style="text-align:center;padding:3rem;"><i class="fas fa-comment-dots" style="font-size:2rem;color:var(--accent-gold);margin-bottom:1rem;display:block;"></i>لا توجد تعليقات بعد.. كن أول من يترك بصمته هنا!</div>';
-        return;
-      }
-      const badWords = ['كس', 'كسم', 'شرموط', 'خول', 'قحبة', 'عاهرة', 'منيوك', 'نييك', 'زب', 'طيز', 'متناك', 'ابن_كلب', 'ابن_وسخة', 'احا', 'احيه'];
-      const filterText = t => { badWords.forEach(w => { t = t.replace(new RegExp(w.replace(/_/g, '\\s*'), 'gi'), '***'); }); return t; };
-
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString('ar-EG') : 'الآن';
-        const stars = data.stars || 5;
-        const starsHtml = '<span class="star-filled">★</span>'.repeat(stars) + '<span class="star-empty">☆</span>'.repeat(5 - stars);
-        const replyHtml = data.admin_reply ? `
-          <div class="admin-reply-card">
-            <span class="admin-tag">رد بصمة ديزاين</span>
-            <p class="comment-text">${filterText(data.admin_reply)}</p>
-          </div>
-        ` : '';
-
-        const card = document.createElement('div');
-        card.className = 'comment-card glass-panel';
-        card.innerHTML = `
-          <div class="comment-header">
-            <div class="comment-avatar"><i class="fas fa-user-circle"></i></div>
-            <div class="comment-info">
-              <span class="comment-author">${filterText(data.name)}</span>
-              <div class="comment-stars">${starsHtml}</div>
-            </div>
-            <span class="comment-date">${date}</span>
-          </div>
-          <p class="comment-text">${filterText(data.comment)}</p>
-          ${replyHtml}
-        `;
-        commentsDisplay.appendChild(card);
-      });
-    });
-
-    const reviewForm = document.getElementById('review-form');
-    if (reviewForm) {
-      reviewForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('reviewer-name').value.trim();
-        const commentRaw = document.getElementById('reviewer-comment').value.trim();
-        if (!name) { showToast('يرجى كتابة اسمك أولاً! ✍️', 'error'); return; }
-        if (!commentRaw) { showToast('اكتب لنا تعليقك! 💬', 'error'); return; }
-        const stars = parseInt(document.querySelector('input[name="stars"]:checked')?.value || 5);
-        const filtered = text => {
-          const badWords = ['كس', 'كسم', 'شرموط', 'خول', 'قحبة', 'عاهرة', 'منيوك', 'نييك', 'زب', 'طيز', 'متناك', 'ابن_كلب', 'ابن_وسخة', 'احا', 'احيه'];
-          let t = text;
-          badWords.forEach(w => { t = t.replace(new RegExp(w.replace(/_/g, '\\s*'), 'gi'), '***'); });
-          return t;
-        };
-        try {
-          await addDoc(commentsCol, { name: filtered(name), comment: filtered(commentRaw), stars, timestamp: serverTimestamp() });
-          reviewForm.reset();
-          showToast('شكراً لك! تم إرسال تعليقك بنجاح ❤️', 'success');
-          setTimeout(() => {
-            commentsDisplay.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }, 500);
-        } catch (error) {
-          showToast('حدث خطأ في الإرسال، حاول مرة أخرى', 'error');
-        }
-      });
-    }
-  }
-
-  /* ========================================
-     14. Analytics
-  ======================================== */
-  function runAnalytics() {
-    const { doc, getDoc, setDoc, updateDoc, increment } = window.fsUtils;
-    const db = window.firebaseDB;
-    const statsRef = doc(db, 'site_stats', 'total_visits');
-    getDoc(statsRef).then(snap => {
-      if (!snap.exists()) setDoc(statsRef, { count: 1 });
-      else updateDoc(statsRef, { count: increment(1) });
-    }).catch(() => {});
-  }
-
-  /* ========================================
-     15. Admin Session / Live Edit
-  ======================================== */
-  function checkAdminSession() {
-    // Admin live-edit feature disabled to prevent showing the gear button
-    return;
-  }
-
-  function enableLiveEditing() {
-    const tags = ['p', 'h1', 'h2', 'span', 'li'];
-    tags.forEach(tag => {
-      document.querySelectorAll(tag).forEach((el, i) => {
-        if (el.classList.contains('no-edit')) return;
-        el.contentEditable = 'true';
-        const id = el.id || `${tag}-${i}`;
-        el.addEventListener('blur', () => saveContent(id, el.innerText));
-      });
-    });
-  }
-
-  async function saveContent(key, value) {
-    const { doc, setDoc } = window.fsUtils;
-    const db = window.firebaseDB;
-    try {
-      await setDoc(doc(db, 'site_content', key), { content: value });
-      showToast('تم الحفظ! ✅', 'success');
-    } catch {
-      showToast('خطأ في الحفظ', 'error');
-    }
+  const statsSection = document.querySelector('.hero__stats');
+  if (statsSection && statsSection.getBoundingClientRect().top < window.innerHeight) {
+    animateCounters();
+    window._countersTriggered = true;
   }
 });
