@@ -479,17 +479,6 @@ function initMusic() {
 // === INTRO OVERLAY ===
 // (handled by inline script in index.html to avoid Firebase dependency)
 
-// === LANGUAGE SWITCHER (Google Translate) ===
-function googleTranslateElementInit() {
-  new google.translate.TranslateElement({
-    pageLanguage: 'ar',
-    includedLanguages: 'ar,en,fr',
-    layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-    autoDisplay: false
-  }, 'google_translate_element');
-}
-window.googleTranslateElementInit = googleTranslateElementInit;
-
 // === PAGE TRANSITION FOR EXTERNAL LINKS ===
 function initPageTransitions() {
   const transition = document.getElementById('pageTransition');
